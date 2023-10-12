@@ -1,0 +1,8 @@
+config:
+  aws:profile: dev
+  aws:region: eu-west-1
+  myfirstpulumi:vpcName: "MyCustomVPC"
+  myfirstpulumi:internetGatewayName: "MyInternetGateway"
+  myfirstpulumi:publicRouteTableName: "MyPublicRouteTable"
+  myfirstpulumi:privateRouteTableName: "MyPrivateRouteTable"
+  myfirstpulumi:vpcCidrBlock: "10.0.0.0/16"
