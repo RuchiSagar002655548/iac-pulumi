@@ -1,6 +1,7 @@
 {
     "name": "myfirstpulumi",
     "main": "assign4.ts",
+  
     "devDependencies": {
         "@types/node": "^16"
     },
