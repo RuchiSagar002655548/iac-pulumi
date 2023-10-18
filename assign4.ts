@@ -1,26 +1,13 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
+import * as crypto from "crypto";
 
-function calculateSubnetCidrBlock(vpcCidrBlock: string, subnetIndex: number,  totalSubnets: number): string {
-    const cidrParts = vpcCidrBlock.split('/');
-    const ipParts = cidrParts[0].split('.').map(part => parseInt(part, 10));
-    
-    // Increment the third octet based on the subnet index
-    ipParts[2] += subnetIndex;
-
-    if (ipParts[2] > 255) {
-        // Handle this case accordingly; in this example, we're throwing an error
-        throw new Error('Exceeded the maximum number of subnets for the given VPC CIDR block');
-    }
-
-    const subnetIp = ipParts.join('.');
-    return `${subnetIp}/24`;  // Use /24 subnet mask for each subnet
-}
 
 
 // Load configurations
 const config = new pulumi.Config("myfirstpulumi");
 const awsConfig = new pulumi.Config("aws");
+
 
 // Get the AWS profile from the config
 const awsProfile = awsConfig.require("profile");
@@ -29,11 +16,30 @@ const awsProfile = awsConfig.require("profile");
 const region =  awsConfig.require("region") as aws.Region
 
 const vpcName = config.require("vpcName");
+const publicCidrBlockName = config.require("publicCidrBlockName");
 const internetGatewayName = config.require("internetGatewayName");
 const publicRouteTableName = config.require("publicRouteTableName");
 const privateRouteTableName = config.require("privateRouteTableName");
-// Get other configurations
+const subnetMask = config.require("subnetMask");
 const vpcCidrBlock = config.require("vpcCidrBlock");
+
+
+function calculateCIDR(vpcCidrBlock: string, subnetIndex: number,  totalSubnets: number): string {
+    const cidrParts = vpcCidrBlock.split('/');
+    const ip = cidrParts[0].split('.').map(part => parseInt(part, 10));
+    
+    // Increment the third octet based on the subnet index
+    ip[2] += subnetIndex;
+
+    if (ip[2] > 255) {
+        // Handle this case accordingly; in this example, we're throwing an error
+        throw new Error('Exceeded the maximum number of subnets');
+    }
+
+    const subnetIp = ip.join('.');
+    return `${subnetIp}/${subnetMask}`;  
+}
+
 
 // Configure AWS provider with the specified region
 const provider = new aws.Provider("provider", {
@@ -56,12 +62,13 @@ const azs = pulumi.output(aws.getAvailabilityZones());
 // Create subnets dynamically based on the number of availability zones (up to 3)
 const subnets = azs.apply((azs) =>
   azs.names.slice(0, 3).flatMap((az, index) => {
-    const publicSubnetCidrBlock = calculateSubnetCidrBlock(
+    const uniqueIdentifier = crypto.randomBytes(4).toString("hex"); // Generate a unique identifier
+    const publicSubnetCidrBlock = calculateCIDR(
       vpcCidrBlock,
       index,
       3
     );
-    const privateSubnetCidrBlock = calculateSubnetCidrBlock(
+    const privateSubnetCidrBlock = calculateCIDR(
       vpcCidrBlock,
       index + 3,
       3
@@ -74,7 +81,7 @@ const subnets = azs.apply((azs) =>
         availabilityZone: az,
         mapPublicIpOnLaunch: true,
         tags: {
-            Name: `PublicSubnet-${index}`, 
+            Name: `PublicSubnet-${az}-${vpcName}-${uniqueIdentifier}`, 
         },
     }, { provider });
 
@@ -84,7 +91,7 @@ const subnets = azs.apply((azs) =>
         availabilityZone: az,
         mapPublicIpOnLaunch: false,
         tags: {
-            Name: `PrivateSubnet-${index}`, 
+            Name: `PrivateSubnet-${az}-${vpcName}-${uniqueIdentifier}`, 
         },
     }, { provider });
 
@@ -106,7 +113,7 @@ const publicRouteTable = new aws.ec2.RouteTable( publicRouteTableName, {
         Name:  publicRouteTableName,  
     },
     routes: [{
-        cidrBlock: "0.0.0.0/0",
+        cidrBlock: publicCidrBlockName,
         gatewayId: internetGateway.id,
     }],
 }, { provider });
