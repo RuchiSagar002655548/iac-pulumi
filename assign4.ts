@@ -22,7 +22,11 @@ const publicRouteTableName = config.require("publicRouteTableName");
 const privateRouteTableName = config.require("privateRouteTableName");
 const subnetMask = config.require("subnetMask");
 const vpcCidrBlock = config.require("vpcCidrBlock");
-
+const amiId = config.require("amiId");
+const keyPair = config.require("keyPair");
+// Declare separate arrays for public and private subnets
+const publicSubnets: aws.ec2.Subnet[] = [];
+const privateSubnets: aws.ec2.Subnet[] = [];
 
 function calculateCIDR(vpcCidrBlock: string, subnetIndex: number,  totalSubnets: number): string {
     const cidrParts = vpcCidrBlock.split('/');
@@ -95,6 +99,10 @@ const subnets = azs.apply((azs) =>
         },
     }, { provider });
 
+        // Pushing the subnets to their respective arrays
+    publicSubnets.push(publicSubnet);
+    privateSubnets.push(privateSubnet);
+
     return [publicSubnet, privateSubnet];
 }));
 
@@ -153,6 +161,50 @@ subnets.apply(subnetArray =>
     )
 );
 
+// Create an EC2 security group for web applications
+const appSecurityGroup = new aws.ec2.SecurityGroup("app-sg", {
+    vpcId: vpc.id,
+    description: "Application Security Group",
+    ingress: [
+        // Allow SSH (22) traffic 
+        {
+            protocol: "tcp",
+            fromPort: 22,
+            toPort: 22,
+            cidrBlocks: [publicCidrBlockName]
+        },
+        // Allow HTTP (80) traffic
+        {
+            protocol: "tcp",
+            fromPort: 80,
+            toPort: 80,
+            cidrBlocks: [publicCidrBlockName]
+        },
+        // Allow HTTPS (443) traffic 
+        {
+            protocol: "tcp",
+            fromPort: 443,
+            toPort: 443,
+            cidrBlocks:[publicCidrBlockName]
+        },
+        // Replace 3000 with the port your application runs on
+        {
+            protocol: "tcp",
+            fromPort: 3000,
+            toPort: 3000,
+            cidrBlocks: [publicCidrBlockName]
+        }
+    ],
+    egress: [
+        // Allow all outgoing traffic
+        {
+            protocol: "-1",
+            fromPort: 0,
+            toPort: 0,
+            cidrBlocks: [publicCidrBlockName]
+        }
+    ],
+});
 
 // Export the IDs of the resources created
 export const vpcId = vpc.id;
@@ -162,7 +214,30 @@ export const publicSubnetIds = subnets.apply(subnets =>
 export const privateSubnetIds = subnets.apply(subnets => 
     subnets.filter((_, index) => index % 2 !== 0).map(subnet => subnet.id)
 );
+// Create an EC2 instance
+const ec2Instance = new aws.ec2.Instance("web-app-instance", {
+    ami: amiId,
+    instanceType: "t2.micro",
+    vpcSecurityGroupIds: [appSecurityGroup.id],  // attach application security group
+    subnetId: pulumi.output(publicSubnetIds[0]),  // specify one of the public subnets
+    associatePublicIpAddress: true,
+    keyName: keyPair, 
+    disableApiTermination: false,  // allows the instance to be terminated
+    rootBlockDevice: {
+        deleteOnTermination: true,  // ensure the EBS volume is deleted upon termination
+        volumeSize: 25, // set the root volume size to 25 GB
+        volumeType: "gp2", // set the root volume type to General Purpose SSD (GP2)
+    },
+    tags: {
+        Name: "web-app-instance",
+    },
+}, { dependsOn: publicSubnets}); 
 
+
+// Export the security group ID
+export const securityGroupId = appSecurityGroup.id;
 export const internetGatewayId = internetGateway.id;
 export const publicRouteTableId = publicRouteTable.id;
 export const privateRouteTableId = privateRouteTable.id;
+// Export the public IP of the instance
+export const publicIp = ec2Instance.publicIp;
