@@ -3,6 +3,7 @@ config:
   aws:region: ap-northeast-2
   myfirstpulumi:vpcName: "MyVPC"
   myfirstpulumi:subnetMask: "24"
+  myfirstpulumi:keyPair: "dev-user-keypair"
   myfirstpulumi:publicCidrBlockName: "0.0.0.0/0"
   myfirstpulumi:internetGatewayName: "InternetGateway"
   myfirstpulumi:publicRouteTableName: "PublicRouteTable"
