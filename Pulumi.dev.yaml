@@ -4,7 +4,7 @@ config:
   myfirstpulumi:vpcName: "MyVPC"
   myfirstpulumi:subnetMask: "24"
   myfirstpulumi:keyPair: "dev-user-keypair"
-  myfirstpulumi:amiId: "ami-0bea2f5373c0ef9f6"
+  myfirstpulumi:amiId: "ami-0dd068cd7f20e974a"
   myfirstpulumi:publicCidrBlockName: "0.0.0.0/0"
   myfirstpulumi:internetGatewayName: "InternetGateway"
   myfirstpulumi:publicRouteTableName: "PublicRouteTable"
