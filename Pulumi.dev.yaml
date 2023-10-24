@@ -3,6 +3,7 @@ config:
   aws:region: us-east-1
   myfirstpulumi:vpcName: "MyVPC"
   myfirstpulumi:subnetMask: "24"
+  myfirstpulumi:ParameterGroupName: "CSYE6225PG"
   myfirstpulumi:keyPair: "dev-user-keypair"
   myfirstpulumi:publicCidrBlockName: "0.0.0.0/0"
   myfirstpulumi:amiId: "ami-0370534bb40b91f09"
