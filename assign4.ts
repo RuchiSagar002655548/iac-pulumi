@@ -1,13 +1,27 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
-import * as crypto from "crypto";
 
+
+function calculateSubnetCidrBlock(vpcCidrBlock: string, subnetIndex: number,  totalSubnets: number): string {
+    const cidrParts = vpcCidrBlock.split('/');
+    const ipParts = cidrParts[0].split('.').map(part => parseInt(part, 10));
+    
+    // Increment the third octet based on the subnet index
+    ipParts[2] += subnetIndex;
+
+    if (ipParts[2] > 255) {
+        // Handle this case accordingly; in this example, we're throwing an error
+        throw new Error('Exceeded the maximum number of subnets for the given VPC CIDR block');
+    }
+
+    const subnetIp = ipParts.join('.');
+    return `${subnetIp}/${subnetMask}`;  // Use /24 subnet mask for each subnet
+}
 
 
 // Load configurations
 const config = new pulumi.Config("myfirstpulumi");
 const awsConfig = new pulumi.Config("aws");
-
 
 // Get the AWS profile from the config
 const awsProfile = awsConfig.require("profile");
@@ -17,33 +31,20 @@ const region =  awsConfig.require("region") as aws.Region
 
 const vpcName = config.require("vpcName");
 const publicCidrBlockName = config.require("publicCidrBlockName");
+const myParameterGroupName = config.require("myParameterGroupName");
 const internetGatewayName = config.require("internetGatewayName");
 const publicRouteTableName = config.require("publicRouteTableName");
 const privateRouteTableName = config.require("privateRouteTableName");
-const subnetMask = config.require("subnetMask");
+// Get other configurations
 const vpcCidrBlock = config.require("vpcCidrBlock");
+const subnetMask = config.require("subnetMask");
 const amiId = config.require("amiId");
 const keyPair = config.require("keyPair");
+
+
 // Declare separate arrays for public and private subnets
 const publicSubnets: aws.ec2.Subnet[] = [];
 const privateSubnets: aws.ec2.Subnet[] = [];
-
-function calculateCIDR(vpcCidrBlock: string, subnetIndex: number,  totalSubnets: number): string {
-    const cidrParts = vpcCidrBlock.split('/');
-    const ip = cidrParts[0].split('.').map(part => parseInt(part, 10));
-    
-    // Increment the third octet based on the subnet index
-    ip[2] += subnetIndex;
-
-    if (ip[2] > 255) {
-        // Handle this case accordingly; in this example, we're throwing an error
-        throw new Error('Exceeded the maximum number of subnets');
-    }
-
-    const subnetIp = ip.join('.');
-    return `${subnetIp}/${subnetMask}`;  
-}
-
 
 // Configure AWS provider with the specified region
 const provider = new aws.Provider("provider", {
@@ -66,13 +67,12 @@ const azs = pulumi.output(aws.getAvailabilityZones());
 // Create subnets dynamically based on the number of availability zones (up to 3)
 const subnets = azs.apply((azs) =>
   azs.names.slice(0, 3).flatMap((az, index) => {
-    const uniqueIdentifier = crypto.randomBytes(4).toString("hex"); // Generate a unique identifier
-    const publicSubnetCidrBlock = calculateCIDR(
+    const publicSubnetCidrBlock = calculateSubnetCidrBlock(
       vpcCidrBlock,
       index,
       3
     );
-    const privateSubnetCidrBlock = calculateCIDR(
+    const privateSubnetCidrBlock = calculateSubnetCidrBlock(
       vpcCidrBlock,
       index + 3,
       3
@@ -85,7 +85,7 @@ const subnets = azs.apply((azs) =>
         availabilityZone: az,
         mapPublicIpOnLaunch: true,
         tags: {
-            Name: `PublicSubnet-${az}-${vpcName}-${uniqueIdentifier}`, 
+            Name: `PublicSubnet-${index}`, 
         },
     }, { provider });
 
@@ -95,11 +95,12 @@ const subnets = azs.apply((azs) =>
         availabilityZone: az,
         mapPublicIpOnLaunch: false,
         tags: {
-            Name: `PrivateSubnet-${az}-${vpcName}-${uniqueIdentifier}`, 
+            Name: `PrivateSubnet-${index}`, 
         },
     }, { provider });
 
-        // Pushing the subnets to their respective arrays
+
+    // Pushing the subnets to their respective arrays
     publicSubnets.push(publicSubnet);
     privateSubnets.push(privateSubnet);
 
@@ -206,6 +207,32 @@ const appSecurityGroup = new aws.ec2.SecurityGroup("app-sg", {
     ],
 });
 
+// Create an EC2 security group for RDS instances
+const rdsSecurityGroup = new aws.ec2.SecurityGroup("rds-sg", {
+    vpcId: vpc.id,
+    description: "RDS Security Group",
+    ingress: [
+        // Allow MySQL/MariaDB (3306) traffic or PostgreSQL (5432) traffic from the application security group
+        {
+            protocol: "tcp",
+            fromPort: 3306,  
+            toPort: 3306,    
+            securityGroups: [appSecurityGroup.id]  // Only allows traffic from the application security group
+        }
+    ],
+    egress: [
+        // Restrict all outgoing internet traffic
+        {
+            protocol: "tcp",
+            fromPort: 0,
+            toPort: 0,
+            cidrBlocks: [publicCidrBlockName]
+            
+        }
+    ],
+}, { provider });
+
+
 // Export the IDs of the resources created
 export const vpcId = vpc.id;
 export const publicSubnetIds = subnets.apply(subnets => 
@@ -214,6 +241,61 @@ export const publicSubnetIds = subnets.apply(subnets =>
 export const privateSubnetIds = subnets.apply(subnets => 
     subnets.filter((_, index) => index % 2 !== 0).map(subnet => subnet.id)
 );
+
+const dbParameterGroup = new aws.rds.ParameterGroup(myParameterGroupName, {
+    family: "mariadb10.5",
+    description: "Custom parameter group for mariadb10.5",
+    parameters: [{
+        name: "max_connections",
+        value: "100"
+    }]
+}, { provider });
+
+// Creating a DB subnet group
+const dbSubnetGroup = new aws.rds.SubnetGroup("my-db-subnet-group", {
+    subnetIds: privateSubnetIds,
+    tags: {
+        Name: "my-db-subnet-group",
+    },
+}, { provider });
+
+// Create an RDS instance with MariaDB
+const dbInstance = new aws.rds.Instance("mydbinstance", {
+    instanceClass: "db.t2.micro",
+    dbSubnetGroupName: dbSubnetGroup.name, // update this with the actual DB subnet group
+    parameterGroupName: dbParameterGroup.name, 
+    engine: "mariadb",
+    engineVersion: "10.5", 
+    allocatedStorage: 20,
+    storageType: "gp2",
+    username: "root",
+    password: "password",
+    skipFinalSnapshot: true,
+    vpcSecurityGroupIds: [rdsSecurityGroup.id],
+    publiclyAccessible: false,
+    tags: {
+        Name: "csye6225",
+    },
+}, { provider });
+
+const userData = `
+#!/bin/bash
+ENV_FILE="/home/admin/webapp/.env"
+
+# Create or overwrite the environment file with the environment variables
+echo "DBHOST=${dbInstance.endpoint}" > $ENV_FILE
+echo "DBUSER=root" >> $ENV_FILE
+echo "DBPASSWORD=password" >> $ENV_FILE
+echo "DBNAME=csye6225" >> $ENV_FILE
+
+# Optionally, you can change the owner and group of the file if needed
+# sudo chown admin:admin $ENV_FILE
+
+# Make the environment file executable
+sudo chmod +x $ENV_FILE
+`;
+
+
 // Create an EC2 instance
 const ec2Instance = new aws.ec2.Instance("web-app-instance", {
     ami: amiId,
@@ -231,13 +313,17 @@ const ec2Instance = new aws.ec2.Instance("web-app-instance", {
     tags: {
         Name: "web-app-instance",
     },
+    userData: userData,
 }, { dependsOn: publicSubnets}); 
 
 
 // Export the security group ID
 export const securityGroupId = appSecurityGroup.id;
+
 export const internetGatewayId = internetGateway.id;
 export const publicRouteTableId = publicRouteTable.id;
 export const privateRouteTableId = privateRouteTable.id;
 // Export the public IP of the instance
 export const publicIp = ec2Instance.publicIp;
+// Export the rds security group ID
+export const rdsSecurityGroupId = rdsSecurityGroup.id;
