@@ -31,7 +31,7 @@ const region =  awsConfig.require("region") as aws.Region
 
 const vpcName = config.require("vpcName");
 const publicCidrBlockName = config.require("publicCidrBlockName");
-const myParameterGroupName = config.require("myParameterGroupName");
+
 const internetGatewayName = config.require("internetGatewayName");
 const publicRouteTableName = config.require("publicRouteTableName");
 const privateRouteTableName = config.require("privateRouteTableName");
