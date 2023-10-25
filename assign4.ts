@@ -30,6 +30,12 @@ const awsProfile = awsConfig.require("profile");
 const region =  awsConfig.require("region") as aws.Region
 
 const vpcName = config.require("vpcName");
+const rdsName = config.require("identifier");
+const intClass = config.require("instanceClass");
+const engVersion = config.require("engineVersion");
+const storageType = config.require("storageType");
+const eng = config.require("engine");
+const databaseName = config.require("dbName");
 const publicCidrBlockName = config.require("publicCidrBlockName");
 const parameterGroupName = config.require("parameterGroupName");
 const internetGatewayName = config.require("internetGatewayName");
