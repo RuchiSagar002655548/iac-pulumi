@@ -69,7 +69,7 @@ const vpc = new aws.ec2.Vpc(vpcName, {
 }, { provider });
 
 
-// Query the number of availability zones in the specified region
+// To Query the number of availability zones in the specified region
 const azs = pulumi.output(aws.getAvailabilityZones());
 
 // Create subnets dynamically based on the number of availability zones (up to 3)
