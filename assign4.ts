@@ -46,6 +46,8 @@ const vpcCidrBlock = config.require("vpcCidrBlock");
 const subnetMask = config.require("subnetMask");
 const amiId = config.require("amiId");
 const keyPair = config.require("keyPair");
+const dbUsername = config.requireSecret("dbUsername");
+const dbPassword = config.requireSecret("dbPassword");
 
 
 // Declare separate arrays for public and private subnets
