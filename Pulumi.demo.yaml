@@ -1,9 +1,10 @@
 config:
   aws:profile: demo
-  aws:region: ap-northeast-2
+  aws:region: us-east-1
   myfirstpulumi:vpcName: "MyVPC"
   myfirstpulumi:subnetMask: "24"
-  myfirstpulumi:keyPair: "dev-user-keypair"
+  myfirstpulumi:parameterGroupName: "csye6225pg"
+  myfirstpulumi:keyPair: "demo-user-keypair"
   myfirstpulumi:publicCidrBlockName: "0.0.0.0/0"
   myfirstpulumi:internetGatewayName: "InternetGateway"
   myfirstpulumi:publicRouteTableName: "PublicRouteTable"
