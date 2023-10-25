@@ -31,7 +31,7 @@ const region =  awsConfig.require("region") as aws.Region
 
 const vpcName = config.require("vpcName");
 const publicCidrBlockName = config.require("publicCidrBlockName");
-const ParameterGroupName = config.require("parameterGroupName");
+const parameterGroupName = config.require("parameterGroupName");
 const internetGatewayName = config.require("internetGatewayName");
 const publicRouteTableName = config.require("publicRouteTableName");
 const privateRouteTableName = config.require("privateRouteTableName");
@@ -242,7 +242,7 @@ export const privateSubnetIds = subnets.apply(subnets =>
     subnets.filter((_, index) => index % 2 !== 0).map(subnet => subnet.id)
 );
 
-const dbParameterGroup = new aws.rds.ParameterGroup(ParameterGroupName, {
+const dbParameterGroup = new aws.rds.ParameterGroup(parameterGroupName, {
     family: "mariadb10.5",
     description: "Custom parameter group for mariadb10.5",
     parameters: [{
@@ -268,7 +268,7 @@ const dbInstance = new aws.rds.Instance("mydbinstance", {
     engineVersion: "10.5", 
     allocatedStorage: 20,
     storageType: "gp2",
-    username: "root",
+    username: "admin",
     password: "password",
     skipFinalSnapshot: true,
     vpcSecurityGroupIds: [rdsSecurityGroup.id],
@@ -276,6 +276,7 @@ const dbInstance = new aws.rds.Instance("mydbinstance", {
     tags: {
         Name: "csye6225",
     },
+    dbName: "csye6225"
 }, { provider });
 
 const userData = `
