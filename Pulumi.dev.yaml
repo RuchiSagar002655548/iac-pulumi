@@ -6,7 +6,7 @@ config:
   myfirstpulumi:parameterGroupName: "csye6225pg"
   myfirstpulumi:keyPair: "dev-user-keypair"
   myfirstpulumi:publicCidrBlockName: "0.0.0.0/0"
-  myfirstpulumi:amiId: "ami-0370534bb40b91f09"
+  myfirstpulumi:amiId: "ami-0133332cb860c230d"
   myfirstpulumi:internetGatewayName: "InternetGateway"
   myfirstpulumi:publicRouteTableName: "PublicRouteTable"
   myfirstpulumi:privateRouteTableName: "PrivateRouteTable"
