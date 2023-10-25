@@ -279,22 +279,29 @@ const dbInstance = new aws.rds.Instance("mydbinstance", {
     dbName: "csye6225"
 }, { provider });
 
-const userData = `
-#!/bin/bash
+const userData = dbInstance.endpoint.apply(endpoint => {
+    const parts = endpoint.split(':');
+    const endpoint_host = parts[0]; // Take the first part as host
+    const dbPort = parts[1]; // Take the second part as port
+ 
+    // Create the bash script string
+    return `#!/bin/bash
 ENV_FILE="/home/admin/webapp/.env"
-
+ 
 # Create or overwrite the environment file with the environment variables
-echo "DBHOST=${dbInstance.endpoint}" > $ENV_FILE
-echo "DBUSER=root" >> $ENV_FILE
-echo "DBPASSWORD=password" >> $ENV_FILE
-echo "DBNAME=csye6225" >> $ENV_FILE
-
+echo "DBHOST=${endpoint_host}" > $ENV_FILE
+echo "DBPORT=${dbPort}" >> $ENV_FILE
+echo "DBUSER=admin" >> $ENV_FILE
+echo "DBPASS=password" >> $ENV_FILE
+echo "DATABASE=csye6225" >> $ENV_FILE
+ 
 # Optionally, you can change the owner and group of the file if needed
-# sudo chown admin:admin $ENV_FILE
-
-# Make the environment file executable
-sudo chmod +x $ENV_FILE
+sudo chown admin:admin $ENV_FILE
+ 
+# Adjust the permissions of the environment file
+sudo chmod 600 $ENV_FILE
 `;
+});
 
 
 // Create an EC2 instance
