@@ -265,22 +265,22 @@ const dbSubnetGroup = new aws.rds.SubnetGroup("db-subnet-group", {
     },
 }, { provider });
 
-// Create an RDS instance with MariaDB
 const dbInstance = new aws.rds.Instance("mydbinstance", {
-    instanceClass: "db.t2.micro",
+    instanceClass: intClass,
     dbSubnetGroupName: dbSubnetGroup.name, 
     parameterGroupName: dbParameterGroup.name, 
-    engine: "mariadb",
-    engineVersion: "10.5", 
+    engine: eng,
+    engineVersion: engVersion, 
     allocatedStorage: 20,
-    storageType: "gp2",
-    username: "admin",
-    password: "password",
+    storageType: storageType,
+    username: "dbUsername",
+    password: "dbPassword",
     skipFinalSnapshot: true,
     vpcSecurityGroupIds: [rdsSecurityGroup.id],
     publiclyAccessible: false,
-    identifier: "csye6225",
-    dbName: "csye6225"
+    identifier: rdsName,
+    dbName: databaseName
+
 }, { provider });
 
 const userData = pulumi.all([dbInstance.endpoint, dbUsername, dbPassword,databaseName]).apply(([endpoint, username, password,databaseName]) => {
