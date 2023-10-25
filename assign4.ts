@@ -217,7 +217,7 @@ const rdsSecurityGroup = new aws.ec2.SecurityGroup("rds-sg", {
             protocol: "tcp",
             fromPort: 3306,  
             toPort: 3306,    
-            securityGroups: [appSecurityGroup.id]  // Only allows traffic from the application security group
+            securityGroups: [appSecurityGroup.id]  // This will only allows traffic from the application security group
         }
     ],
     egress: [
@@ -252,17 +252,17 @@ const dbParameterGroup = new aws.rds.ParameterGroup(parameterGroupName, {
 }, { provider });
 
 // Creating a DB subnet group
-const dbSubnetGroup = new aws.rds.SubnetGroup("my-db-subnet-group", {
+const dbSubnetGroup = new aws.rds.SubnetGroup("db-subnet-group", {
     subnetIds: privateSubnetIds,
     tags: {
-        Name: "my-db-subnet-group",
+        Name: "db-subnet-group",
     },
 }, { provider });
 
 // Create an RDS instance with MariaDB
 const dbInstance = new aws.rds.Instance("mydbinstance", {
     instanceClass: "db.t2.micro",
-    dbSubnetGroupName: dbSubnetGroup.name, // update this with the actual DB subnet group
+    dbSubnetGroupName: dbSubnetGroup.name, 
     parameterGroupName: dbParameterGroup.name, 
     engine: "mariadb",
     engineVersion: "10.5", 
@@ -273,17 +273,14 @@ const dbInstance = new aws.rds.Instance("mydbinstance", {
     skipFinalSnapshot: true,
     vpcSecurityGroupIds: [rdsSecurityGroup.id],
     publiclyAccessible: false,
-    tags: {
-        Name: "csye6225",
-    },
+    identifier: "csye6225",
     dbName: "csye6225"
 }, { provider });
 
 const userData = dbInstance.endpoint.apply(endpoint => {
     const parts = endpoint.split(':');
-    const endpoint_host = parts[0]; // Take the first part as host
-    const dbPort = parts[1]; // Take the second part as port
- 
+    const endpoint_host = parts[0]; 
+    const dbPort = parts[1]; 
     // Create the bash script string
     return `#!/bin/bash
 ENV_FILE="/home/admin/webapp/.env"
