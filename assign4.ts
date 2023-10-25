@@ -60,7 +60,7 @@ const provider = new aws.Provider("provider", {
     profile: awsProfile,
 });
 
-// This will create a VPC
+// Create a VPC
 const vpc = new aws.ec2.Vpc(vpcName, {
     cidrBlock: vpcCidrBlock,
     tags: {
@@ -69,7 +69,7 @@ const vpc = new aws.ec2.Vpc(vpcName, {
 }, { provider });
 
 
-// To Query the number of availability zones in the specified region
+// Query the number of availability zones in the specified region
 const azs = pulumi.output(aws.getAvailabilityZones());
 
 // Create subnets dynamically based on the number of availability zones (up to 3)
@@ -225,7 +225,7 @@ const rdsSecurityGroup = new aws.ec2.SecurityGroup("rds-sg", {
             protocol: "tcp",
             fromPort: 3306,  
             toPort: 3306,    
-            securityGroups: [appSecurityGroup.id]  // This will only allows traffic from the application security group
+            securityGroups: [appSecurityGroup.id]  // Only allows traffic from the application security group
         }
     ],
     egress: [
@@ -259,14 +259,16 @@ const dbParameterGroup = new aws.rds.ParameterGroup(parameterGroupName, {
     }]
 }, { provider });
 
+
 // Creating a DB subnet group
-const dbSubnetGroup = new aws.rds.SubnetGroup("db-subnet-group", {
+const dbSubnetGroup = new aws.rds.SubnetGroup("dbsubnetgrp", {
     subnetIds: privateSubnetIds,
     tags: {
-        Name: "db-subnet-group",
+        Name: "dbsubnetgrp",
     },
 }, { provider });
 
+// Create an RDS instance with MariaDB
 const dbInstance = new aws.rds.Instance("mydbinstance", {
     instanceClass: intClass,
     dbSubnetGroupName: dbSubnetGroup.name, 
@@ -292,7 +294,7 @@ const userData = pulumi.all([dbInstance.endpoint, dbUsername, dbPassword,databas
     
     // Create the bash script string
     return `#!/bin/bash
-ENV_FILE="/home/admin/webapp/.env"
+ENV_FILE="/home/webapp/webapp/.env"
 
 # Create or overwrite the environment file with the environment variables
 echo "DBHOST=${endpoint_host}" > $ENV_FILE
@@ -310,7 +312,7 @@ sudo chmod 600 $ENV_FILE
 });
 
 // Create an EC2 instance
-const ec2Instance = new aws.ec2.Instance("web-app-instance", {
+const ec2Instance = new aws.ec2.Instance("web-app", {
     ami: amiId,
     instanceType: "t2.micro",
     vpcSecurityGroupIds: [appSecurityGroup.id],  // attach application security group
@@ -324,7 +326,7 @@ const ec2Instance = new aws.ec2.Instance("web-app-instance", {
         volumeType: "gp2", // set the root volume type to General Purpose SSD (GP2)
     },
     tags: {
-        Name: "web-app-instance",
+        Name: "web-app",
     },
     userData: userData,
 }, { dependsOn: publicSubnets}); 
