@@ -60,7 +60,7 @@ const provider = new aws.Provider("provider", {
     profile: awsProfile,
 });
 
-// Create a VPC
+// This will create a VPC
 const vpc = new aws.ec2.Vpc(vpcName, {
     cidrBlock: vpcCidrBlock,
     tags: {
