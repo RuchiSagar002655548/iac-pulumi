@@ -294,7 +294,7 @@ const userData = pulumi.all([dbInstance.endpoint, dbUsername, dbPassword,databas
     
     // Create the bash script string
     return `#!/bin/bash
-ENV_FILE="/home/webapp/webapp/.env"
+ENV_FILE="/home/admin/webapp/.env"
 
 # Create or overwrite the environment file with the environment variables
 echo "DBHOST=${endpoint_host}" > $ENV_FILE
@@ -302,9 +302,11 @@ echo "DBPORT=${dbPort}" >> $ENV_FILE
 echo "DBUSER=${username}" >> $ENV_FILE
 echo "DBPASS=${password}" >> $ENV_FILE
 echo "DATABASE=${databaseName}" >> $ENV_FILE
+echo "CSV_PATH=/home/admin/webapp/users.csv" >> $ENV_FILE
+echo "PORT=3000" >> $ENV_FILE
 
 # Optionally, you can change the owner and group of the file if needed
-sudo chown ec2-user:ec2-group $ENV_FILE
+sudo chown admin:admin $ENV_FILE
 
 # Adjust the permissions of the environment file
 sudo chmod 600 $ENV_FILE

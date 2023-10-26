@@ -1,15 +1,19 @@
 config:
   aws:profile: dev
   aws:region: us-east-1
-  myfirstpulumi:amiId: "ami-0f539be3d88296054"
+  myfirstpulumi:amiId: "ami-09a0af98119872aa2"
   myfirstpulumi:dbName: "csye6225"
+  myfirstpulumi:dbPassword:
+    secure: AAABAAqTB8Z0Bb2eZpCFZfTbuPx6nUyuT9XjK62GQeYvQu254YhB/Q==
+  myfirstpulumi:dbUsername:
+    secure: AAABAC0UoWRpewRLGIrxba6BY994uTFh1i5K2GkIZ+2IqgXVT/EF1A==
   myfirstpulumi:engine: "mariadb"
   myfirstpulumi:engineVersion: "10.5"
   myfirstpulumi:identifier: "csye6225"
   myfirstpulumi:instanceClass: "db.t2.micro"
   myfirstpulumi:internetGatewayName: "InternetGateway"
   myfirstpulumi:keyPair: "dev-user-keypair"
-  myfirstpulumi:myParameterGroupName: "csye6225pg"
+  myfirstpulumi:parameterGroupName: "csye6225pg"
   myfirstpulumi:privateRouteTableName: "PrivateRouteTable"
   myfirstpulumi:publicCidrBlockName: "0.0.0.0/0"
   myfirstpulumi:publicRouteTableName: "PublicRouteTable"

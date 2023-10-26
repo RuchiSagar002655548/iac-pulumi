@@ -1,19 +1,23 @@
 config:
   aws:profile: demo
   aws:region: us-east-1
-  myfirstpulumi:vpcName: "MyVPC"
-  myfirstpulumi:subnetMask: "24"
-  myfirstpulumi:parameterGroupName: "csye6225pg"
-  myfirstpulumi:keyPair: "demo-user-keypair"
-  myfirstpulumi:publicCidrBlockName: "0.0.0.0/0"
   myfirstpulumi:amiId: "ami-0133332cb860c230d"
-  myfirstpulumi:internetGatewayName: "InternetGateway"
-  myfirstpulumi:publicRouteTableName: "PublicRouteTable"
-  myfirstpulumi:privateRouteTableName: "PrivateRouteTable"
-  myfirstpulumi:vpcCidrBlock: "10.0.0.0/16"
+  myfirstpulumi:dbName: "csye6225"
+  myfirstpulumi:dbPassword:
+    secure: AAABAFVbRTiaFPuMpkxfcaAQhD9znoOcklFm8nkQEdM0I/yHShbYFw==
+  myfirstpulumi:dbUsername:
+    secure: AAABAOZwp41Fj03bA4BYGxjZ1n0tvpUhhy7Oc9SeQ0NNLwF5pxUTbQ==
   myfirstpulumi:engine: "mariadb"
   myfirstpulumi:engineVersion: "10.5"
   myfirstpulumi:identifier: "csye6225"
   myfirstpulumi:instanceClass: "db.t2.micro"
+  myfirstpulumi:internetGatewayName: "InternetGateway"
+  myfirstpulumi:keyPair: "demo-user-keypair"
+  myfirstpulumi:parameterGroupName: "csye6225pg"
+  myfirstpulumi:privateRouteTableName: "PrivateRouteTable"
+  myfirstpulumi:publicCidrBlockName: "0.0.0.0/0"
+  myfirstpulumi:publicRouteTableName: "PublicRouteTable"
   myfirstpulumi:storageType: "gp2"
   myfirstpulumi:subnetMask: "24"
+  myfirstpulumi:vpcCidrBlock: "10.0.0.0/16"
+  myfirstpulumi:vpcName: "MyVPC"
