@@ -22,7 +22,8 @@ function calculateSubnetCidrBlock(vpcCidrBlock: string, subnetIndex: number,  to
 // Load configurations
 const config = new pulumi.Config("myfirstpulumi");
 const awsConfig = new pulumi.Config("aws");
-
+const domainName = config.require("domainName"); 
+const hostedZoneId = config.require("hostedZoneId");
 // Get the AWS profile from the config
 const awsProfile = awsConfig.require("profile");
 
@@ -277,8 +278,8 @@ const dbInstance = new aws.rds.Instance("mydbinstance", {
     engineVersion: engVersion, 
     allocatedStorage: 20,
     storageType: storageType,
-    username: "dbUsername",
-    password: "dbPassword",
+    username: dbUsername,
+    password: dbPassword,
     skipFinalSnapshot: true,
     vpcSecurityGroupIds: [rdsSecurityGroup.id],
     publiclyAccessible: false,
@@ -294,7 +295,7 @@ const userData = pulumi.all([dbInstance.endpoint, dbUsername, dbPassword,databas
     
     // Create the bash script string
     return `#!/bin/bash
-ENV_FILE="/home/admin/webapp/.env"
+ENV_FILE="/home/ec2-user/webapp/.env"
 
 # Create or overwrite the environment file with the environment variables
 echo "DBHOST=${endpoint_host}" > $ENV_FILE
@@ -302,11 +303,11 @@ echo "DBPORT=${dbPort}" >> $ENV_FILE
 echo "DBUSER=${username}" >> $ENV_FILE
 echo "DBPASS=${password}" >> $ENV_FILE
 echo "DATABASE=${databaseName}" >> $ENV_FILE
-echo "CSV_PATH=/home/admin/webapp/users.csv" >> $ENV_FILE
+echo "CSV_PATH=/home/ec2-user/webapp/users.csv" >> $ENV_FILE
 echo "PORT=3000" >> $ENV_FILE
 
 # Optionally, you can change the owner and group of the file if needed
-sudo chown admin:admin $ENV_FILE
+sudo chown ec2-user:ec2-group $ENV_FILE
 
 # Adjust the permissions of the environment file
 sudo chmod 600 $ENV_FILE
@@ -333,6 +334,14 @@ const ec2Instance = new aws.ec2.Instance("web-app", {
     userData: userData,
 }, { dependsOn: publicSubnets}); 
 
+const aRecord = new aws.route53.Record("aRecord", {
+    zoneId: hostedZoneId,
+    name: domainName,
+    type: "A",
+    ttl: 60,
+    records: [pulumi.output(ec2Instance.publicIp)],
+}, { provider});
+
 
 // Export the security group ID
 export const securityGroupId = appSecurityGroup.id;
@@ -344,3 +353,6 @@ export const privateRouteTableId = privateRouteTable.id;
 export const publicIp = ec2Instance.publicIp;
 // Export the rds security group ID
 export const rdsSecurityGroupId = rdsSecurityGroup.id;
+export const recordName = aRecord.name;
+export const recordType = aRecord.type;
+export const recordTtl = aRecord.ttl;
