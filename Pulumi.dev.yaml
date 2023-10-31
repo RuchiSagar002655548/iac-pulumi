@@ -11,6 +11,8 @@ config:
   myfirstpulumi:engineVersion: "10.5"
   myfirstpulumi:identifier: "csye6225"
   myfirstpulumi:instanceClass: "db.t2.micro"
+  myfirstpulumi:hostedZoneId: "Z081572234LPBC8PBCQ6V"
+  myfirstpulumi:domainName: "dev.fallcsye6225.me"
   myfirstpulumi:internetGatewayName: "InternetGateway"
   myfirstpulumi:keyPair: "dev-user-keypair"
   myfirstpulumi:parameterGroupName: "csye6225pg"
