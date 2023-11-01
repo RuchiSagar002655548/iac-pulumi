@@ -10,7 +10,7 @@ config:
   myfirstpulumi:domainName: "demo.fallcsye6225.me"
   myfirstpulumi:engine: "mariadb"
   myfirstpulumi:engineVersion: "10.5"
-  myfirstpulumi:hostedZoneId: "Z081572234LPBC8PBCQ6V"
+  myfirstpulumi:hostedZoneId: "Z07738473RMKFGHJTUR6X"
   myfirstpulumi:identifier: "csye6225"
   myfirstpulumi:instanceClass: "db.t2.micro"
   myfirstpulumi:internetGatewayName: "InternetGateway"
