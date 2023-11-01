@@ -6,9 +6,11 @@ config:
   myfirstpulumi:dbPassword:
     secure: AAABAFVbRTiaFPuMpkxfcaAQhD9znoOcklFm8nkQEdM0I/yHShbYFw==
   myfirstpulumi:dbUsername:
-    secure: AAABAOZwp41Fj03bA4BYGxjZ1n0tvpUhhy7Oc9SeQ0NNLwF5pxUTbQ==
+    secure: AAABANCMGTNvyKe/W/7q8rCX4y8+PWo1QjclhrRoxlxJ+lzGnQ==
+  myfirstpulumi:domainName: "demo.fallcsye6225.me"
   myfirstpulumi:engine: "mariadb"
   myfirstpulumi:engineVersion: "10.5"
+  myfirstpulumi:hostedZoneId: "Z081572234LPBC8PBCQ6V"
   myfirstpulumi:identifier: "csye6225"
   myfirstpulumi:instanceClass: "db.t2.micro"
   myfirstpulumi:internetGatewayName: "InternetGateway"
