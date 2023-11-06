@@ -311,6 +311,10 @@ sudo chown ec2-user:ec2-group $ENV_FILE
 
 # Adjust the permissions of the environment file
 sudo chmod 600 $ENV_FILE
+
+# Configure and restart the CloudWatch Agent
+sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json -s
+sudo systemctl restart amazon-cloudwatch-agent
 `;
 });
 
