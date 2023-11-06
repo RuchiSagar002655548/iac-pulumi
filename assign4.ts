@@ -362,6 +362,11 @@ new aws.iam.RolePolicyAttachment("cloudWatchAgentRoleAttachment", {
     policyArn: cloudWatchAgentServerPolicy.arn,
 });
 
+// Create an IAM instance profile that references the IAM role
+const instanceProfile = new aws.iam.InstanceProfile("cloudWatchAgentInstanceProfile", {
+    role: role.name,
+});
+
 // Create an EC2 instance
 const ec2Instance = new aws.ec2.Instance("web-app", {
     ami: amiId,
@@ -380,6 +385,7 @@ const ec2Instance = new aws.ec2.Instance("web-app", {
         Name: "web-app",
     },
     userData: userData,
+    iamInstanceProfile: instanceProfile.name,
 }, { dependsOn: publicSubnets}); 
 
 const aRecord = new aws.route53.Record("aRecord", {
