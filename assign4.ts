@@ -314,6 +314,54 @@ sudo chmod 600 $ENV_FILE
 `;
 });
 
+const cloudWatchAgentServerPolicy = new aws.iam.Policy("cloudWatchAgentServerPolicy", {
+    description: "A policy that allows sending logs to CloudWatch",
+    policy: JSON.stringify({
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "cloudwatch:PutMetricData",
+                    "ec2:DescribeVolumes",
+                    "ec2:DescribeTags",
+                    "logs:PutLogEvents",
+                    "logs:DescribeLogStreams",
+                    "logs:DescribeLogGroups",
+                    "logs:CreateLogStream",
+                    "logs:CreateLogGroup"
+                ],
+                "Resource": "*"
+            },
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "ssm:GetParameter"
+                ],
+                "Resource": "arn:aws:ssm:*:*:parameter/AmazonCloudWatch-*"
+            }
+        ]
+    }),
+});
+
+const role = new aws.iam.Role("cloudWatchAgentRole", {
+    assumeRolePolicy: JSON.stringify({
+        Version: "2012-10-17",
+        Statement: [{
+            Action: "sts:AssumeRole",
+            Principal: {
+                Service: "ec2.amazonaws.com",
+            },
+            Effect: "Allow",
+        }],
+    }),
+});
+
+new aws.iam.RolePolicyAttachment("cloudWatchAgentRoleAttachment", {
+    role: role.name,
+    policyArn: cloudWatchAgentServerPolicy.arn,
+});
+
 // Create an EC2 instance
 const ec2Instance = new aws.ec2.Instance("web-app", {
     ami: amiId,
