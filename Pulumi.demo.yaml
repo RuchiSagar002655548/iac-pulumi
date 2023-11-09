@@ -1,7 +1,7 @@
 config:
   aws:profile: demo
   aws:region: us-east-1
-  myfirstpulumi:amiId: "ami-0133332cb860c230d"
+  myfirstpulumi:amiId: "ami-0c431a79d31e87cb9"
   myfirstpulumi:dbName: "csye6225"
   myfirstpulumi:dbPassword:
     secure: AAABAFVbRTiaFPuMpkxfcaAQhD9znoOcklFm8nkQEdM0I/yHShbYFw==
