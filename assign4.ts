@@ -42,6 +42,8 @@ const parameterGroupName = config.require("parameterGroupName");
 const internetGatewayName = config.require("internetGatewayName");
 const publicRouteTableName = config.require("publicRouteTableName");
 const privateRouteTableName = config.require("privateRouteTableName");
+const applicationPort = parseInt(config.require("applicationPort"), 10);
+
 // Get other configurations
 const vpcCidrBlock = config.require("vpcCidrBlock");
 const subnetMask = config.require("subnetMask");
@@ -202,38 +204,25 @@ const lbSecurityGroup = new aws.ec2.SecurityGroup("lb-sg", {
     },
 }, { provider });
 
+
 // Create an EC2 security group for web applications
 const appSecurityGroup = new aws.ec2.SecurityGroup("app-sg", {
     vpcId: vpc.id,
     description: "Application Security Group",
     ingress: [
-        // Allow SSH (22) traffic 
+        // Allow SSH (22) and application Port traffic from the load balancer security group
         {
             protocol: "tcp",
             fromPort: 22,
             toPort: 22,
-            cidrBlocks: [publicCidrBlockName]
+            securityGroups: [lbSecurityGroup.id] 
         },
-        // Allow HTTP (80) traffic
+        // Allow Application traffic from the load balancer security group
         {
             protocol: "tcp",
-            fromPort: 80,
-            toPort: 80,
-            cidrBlocks: [publicCidrBlockName]
-        },
-        // Allow HTTPS (443) traffic 
-        {
-            protocol: "tcp",
-            fromPort: 443,
-            toPort: 443,
-            cidrBlocks:[publicCidrBlockName]
-        },
-        // Replace 3000 with the port your application runs on
-        {
-            protocol: "tcp",
-            fromPort: 3000,
-            toPort: 3000,
-            cidrBlocks: [publicCidrBlockName]
+            fromPort: applicationPort,
+            toPort: applicationPort,
+            securityGroups: [lbSecurityGroup.id]
         }
     ],
     egress: [
@@ -243,8 +232,8 @@ const appSecurityGroup = new aws.ec2.SecurityGroup("app-sg", {
             fromPort: 0,
             toPort: 0,
             cidrBlocks: [publicCidrBlockName]
-        }
-    ],
+        }
+    ],
 });
 
 // Create an EC2 security group for RDS instances
