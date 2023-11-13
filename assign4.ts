@@ -445,3 +445,4 @@ export const rdsSecurityGroupId = rdsSecurityGroup.id;
 export const recordName = aRecord.name;
 export const recordType = aRecord.type;
 export const recordTtl = aRecord.ttl;
+export const lbSecurityGroupId = lbSecurityGroup.id;
