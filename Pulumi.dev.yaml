@@ -23,3 +23,4 @@ config:
   myfirstpulumi:subnetMask: "24"
   myfirstpulumi:vpcCidrBlock: "10.0.0.0/16"
   myfirstpulumi:vpcName: "MyVPC"
+  myfirstpulumi:applicationPort: "3000"
