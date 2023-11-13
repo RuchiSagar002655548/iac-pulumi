@@ -171,6 +171,37 @@ subnets.apply(subnetArray =>
     )
 );
 
+const lbSecurityGroup = new aws.ec2.SecurityGroup("lb-sg", {
+    vpcId: vpc.id,
+    description: "Load Balancer Security Group",
+    ingress: [
+        {
+            protocol: "tcp",
+            fromPort: 80,
+            toPort: 80,
+            cidrBlocks: ["0.0.0.0/0"]
+        },
+        {
+            protocol: "tcp",
+            fromPort: 443,
+            toPort: 443,
+            cidrBlocks: ["0.0.0.0/0"]
+        },
+    ],
+    egress: [
+        // Allow all outgoing traffic from the load balancer
+        {
+            protocol: "-1",
+            fromPort: 0,
+            toPort: 0,
+            cidrBlocks: ["0.0.0.0/0"]
+        },
+    ],
+    tags: {
+        Name: "LoadBalancerSecurityGroup",
+    },
+}, { provider });
+
 // Create an EC2 security group for web applications
 const appSecurityGroup = new aws.ec2.SecurityGroup("app-sg", {
     vpcId: vpc.id,
