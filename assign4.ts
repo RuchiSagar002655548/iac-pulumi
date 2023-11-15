@@ -507,6 +507,17 @@ const cpuLowAlarm = new aws.cloudwatch.MetricAlarm("cpuLowAlarm", {
     },
 });
 
+const aRecord = new aws.route53.Record("aRecord", {
+    zoneId: hostedZoneId,
+    name: domainName,
+    type: "A",
+    aliases: [{
+        name: pulumi.interpolate`${appLoadBalancer.dnsName}`,
+        zoneId: appLoadBalancer.zoneId,
+        evaluateTargetHealth: true,
+    }],
+}, { provider });
+
 // Export the security group ID
 export const securityGroupId = appSecurityGroup.id;
 export const internetGatewayId = internetGateway.id;
@@ -517,5 +528,4 @@ export const privateRouteTableId = privateRouteTable.id;
 export const rdsSecurityGroupId = rdsSecurityGroup.id;
 export const recordName = aRecord.name;
 export const recordType = aRecord.type;
-export const recordTtl = aRecord.ttl;
 export const lbSecurityGroupId = lbSecurityGroup.id;
