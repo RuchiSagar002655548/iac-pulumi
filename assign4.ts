@@ -396,6 +396,33 @@ const instanceProfile = new aws.iam.InstanceProfile("cloudWatchAgentInstanceProf
     role: role.name,
 });
 
+const appLoadBalancer = new aws.lb.LoadBalancer("appLoadBalancer", {
+    internal: false,
+    securityGroups: [lbSecurityGroup.id],
+    subnets: publicSubnetIds, 
+    enableDeletionProtection: false,
+});
+
+const targetGroup = new aws.lb.TargetGroup("targetGroup", {
+    port: applicationPort, // Assuming your app listens on port 3000
+    protocol: "HTTP",
+    vpcId: vpcId,
+    targetType: "instance",
+    healthCheck: {
+        enabled: true,
+        path: "/healthz"
+    },
+});
+
+const listener = new aws.lb.Listener("listener", {
+    loadBalancerArn: appLoadBalancer.arn,
+    port: 80,
+    defaultActions: [{
+        type: "forward",
+        targetGroupArn: targetGroup.arn,
+    }],
+});
+
 // Create an EC2 instance
 const ec2Instance = new aws.ec2.Instance("web-app", {
     ami: amiId,
