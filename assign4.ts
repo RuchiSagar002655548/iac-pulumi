@@ -24,12 +24,12 @@ const config = new pulumi.Config("myfirstpulumi");
 const awsConfig = new pulumi.Config("aws");
 const domainName = config.require("domainName"); 
 const hostedZoneId = config.require("hostedZoneId");
+
 // Get the AWS profile from the config
 const awsProfile = awsConfig.require("profile");
 
 // Get AWS region from configuration
 const region =  awsConfig.require("region") as aws.Region
-
 const vpcName = config.require("vpcName");
 const rdsName = config.require("identifier");
 const intClass = config.require("instanceClass");
@@ -181,13 +181,13 @@ const lbSecurityGroup = new aws.ec2.SecurityGroup("lb-sg", {
             protocol: "tcp",
             fromPort: 80,
             toPort: 80,
-            cidrBlocks: ["0.0.0.0/0"]
+            cidrBlocks: [publicCidrBlockName]
         },
         {
             protocol: "tcp",
             fromPort: 443,
             toPort: 443,
-            cidrBlocks: ["0.0.0.0/0"]
+            cidrBlocks: [publicCidrBlockName]
         },
     ],
     egress: [
@@ -196,7 +196,7 @@ const lbSecurityGroup = new aws.ec2.SecurityGroup("lb-sg", {
             protocol: "-1",
             fromPort: 0,
             toPort: 0,
-            cidrBlocks: ["0.0.0.0/0"]
+            cidrBlocks: [publicCidrBlockName]
         },
     ],
     tags: {
@@ -353,7 +353,12 @@ const cloudWatchAgentServerPolicy = new aws.iam.Policy("cloudWatchAgentServerPol
                     "logs:DescribeLogStreams",
                     "logs:DescribeLogGroups",
                     "logs:CreateLogStream",
-                    "logs:CreateLogGroup"
+                    "logs:CreateLogGroup",
+                    "elasticloadbalancing:Describe*",
+                    "autoscaling:DescribeAutoScalingGroups",
+                    "autoscaling:DescribeAutoScalingInstances",
+                    "autoscaling:DescribeLaunchConfigurations",
+                    "autoscaling:DescribePolicies",
                 ],
                 "Resource": "*"
             },
