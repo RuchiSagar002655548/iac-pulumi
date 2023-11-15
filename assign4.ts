@@ -459,6 +459,54 @@ const autoScalingGroup = new aws.autoscaling.Group("webAppAutoScalingGroup", {
     targetGroupArns: [targetGroup.arn],
 }, { dependsOn: publicSubnets});
 
+const scaleUpPolicy = new aws.autoscaling.Policy("scaleUp", {
+    autoscalingGroupName: autoScalingGroup.name,
+    cooldown: 60,
+    adjustmentType: "ChangeInCapacity",
+    scalingAdjustment: 1,
+    metricAggregationType: "Average",
+    policyType: "SimpleScaling",
+    // You would typically use CloudWatch Alarms to trigger this policy
+});
+
+const scaleDownPolicy = new aws.autoscaling.Policy("scaleDown", {
+    autoscalingGroupName: autoScalingGroup.name,
+    cooldown: 60,
+    adjustmentType: "ChangeInCapacity",
+    scalingAdjustment: -1,
+    metricAggregationType: "Average",
+    policyType: "SimpleScaling",
+    // You would typically use CloudWatch Alarms to trigger this policy
+});
+
+const cpuHighAlarm = new aws.cloudwatch.MetricAlarm("cpuHighAlarm", {
+    metricName: "CPUUtilization",
+    namespace: "AWS/EC2",
+    statistic: "Average",
+    period: 60,
+    evaluationPeriods: 1,
+    threshold: 3,
+    comparisonOperator: "GreaterThanThreshold",
+    alarmActions: [scaleUpPolicy.arn],
+    dimensions: {
+        AutoScalingGroupName: autoScalingGroup.name,
+    },
+});
+
+const cpuLowAlarm = new aws.cloudwatch.MetricAlarm("cpuLowAlarm", {
+    metricName: "CPUUtilization",
+    namespace: "AWS/EC2",
+    statistic: "Average",
+    period: 60,
+    evaluationPeriods: 1,
+    threshold: 1,
+    comparisonOperator: "LessThanThreshold",
+    alarmActions: [scaleDownPolicy.arn],
+    dimensions: {
+        AutoScalingGroupName: autoScalingGroup.name,
+    },
+});
+
 // Export the security group ID
 export const securityGroupId = appSecurityGroup.id;
 export const internetGatewayId = internetGateway.id;
