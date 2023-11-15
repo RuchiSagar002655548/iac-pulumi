@@ -423,44 +423,48 @@ const listener = new aws.lb.Listener("listener", {
     }],
 });
 
-// Create an EC2 instance
-const ec2Instance = new aws.ec2.Instance("web-app", {
-    ami: amiId,
+const launchTemplate = new aws.ec2.LaunchTemplate("launch_template", {
+    imageId: amiId,
     instanceType: "t2.micro",
-    vpcSecurityGroupIds: [appSecurityGroup.id],  // attach application security group
-    subnetId: pulumi.output(publicSubnetIds[0]),  // specify one of the public subnets
-    associatePublicIpAddress: true,
-    keyName: keyPair, 
-    disableApiTermination: false,  // allows the instance to be terminated
-    rootBlockDevice: {
-        deleteOnTermination: true,  // ensure the EBS volume is deleted upon termination
-        volumeSize: 25, // set the root volume size to 25 GB
-        volumeType: "gp2", // set the root volume type to General Purpose SSD (GP2)
+    keyName: keyPair,
+    networkInterfaces: [{
+        associatePublicIpAddress: "true",
+        securityGroups: [appSecurityGroup.id],
+    }],
+    userData: userData.apply(ud => Buffer.from(ud).toString('base64')),
+    iamInstanceProfile: {
+        name: instanceProfile.name,
     },
-    tags: {
-        Name: "web-app",
+});
+   
+const autoScalingGroup = new aws.autoscaling.Group("webAppAutoScalingGroup", {
+    maxSize: 3,
+    minSize: 1,
+    desiredCapacity: 1,
+    vpcZoneIdentifiers: pulumi.output(publicSubnetIds),
+    launchTemplate: {
+        id: launchTemplate.id,
+        version: '$Latest',
     },
-    userData: userData,
-    iamInstanceProfile: instanceProfile.name,
-}, { dependsOn: publicSubnets}); 
-
-const aRecord = new aws.route53.Record("aRecord", {
-    zoneId: hostedZoneId,
-    name: domainName,
-    type: "A",
-    ttl: 60,
-    records: [pulumi.output(ec2Instance.publicIp)],
-}, { provider});
-
+    tags: [{
+        key: "Name",
+        value: "web-app",
+        propagateAtLaunch: true,
+    }, {
+        key: "AutoScalingGroup",
+        value: "TagProperty",
+        propagateAtLaunch: true,
+    }],
+    defaultCooldown: 60,
+    targetGroupArns: [targetGroup.arn],
+}, { dependsOn: publicSubnets});
 
 // Export the security group ID
 export const securityGroupId = appSecurityGroup.id;
-
 export const internetGatewayId = internetGateway.id;
 export const publicRouteTableId = publicRouteTable.id;
 export const privateRouteTableId = privateRouteTable.id;
-// Export the public IP of the instance
-export const publicIp = ec2Instance.publicIp;
+
 // Export the rds security group ID
 export const rdsSecurityGroupId = rdsSecurityGroup.id;
 export const recordName = aRecord.name;
