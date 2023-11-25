@@ -82,6 +82,30 @@ const vpc = new aws.ec2.Vpc(vpcName, {
     },
 }, { provider });
 
+// Create a Google Service Account
+const bucketServiceAccount = new gcp.serviceaccount.Account("myBucketAccount", {
+    accountId: bucketAccountId,
+    displayName: bucketDisplayName,
+});
+
+// Assign the Service Account Admin role to the newly created service account
+const serviceAccountAdminBinding = new gcp.projects.IAMMember("serviceAccountAdminBinding", {
+    member: pulumi.interpolate`serviceAccount:${bucketServiceAccount.email}`,
+    role: "roles/iam.serviceAccountAdmin",
+    project: gcpProjectId, 
+});
+
+const bucket = new gcp.storage.Bucket("myBucket", {
+    name: gcpBucketName,
+    location: location,
+    forceDestroy: true,
+});
+
+// Create access key for the bucket service account
+const bucketServiceAccountKey = new gcp.serviceaccount.Key("bucketAccessKey", {
+    serviceAccountId: bucketServiceAccount.name,
+    keyAlgorithm: "KEY_ALG_RSA_2048"
+});
 
 // Query the number of availability zones in the specified region
 const azs = pulumi.output(aws.getAvailabilityZones());
