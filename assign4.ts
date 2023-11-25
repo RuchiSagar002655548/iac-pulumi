@@ -42,14 +42,15 @@ const storageType = config.require("storageType");
 const eng = config.require("engine");
 const databaseName = config.require("dbName");
 const publicCidrBlockName = config.require("publicCidrBlockName");
-const parameterGroupName = config.require("parameterGroupName");
+const myParameterGroupName = config.require("myParameterGroupName");
 const internetGatewayName = config.require("internetGatewayName");
 const publicRouteTableName = config.require("publicRouteTableName");
 const privateRouteTableName = config.require("privateRouteTableName");
-const applicationPort = parseInt(config.require("applicationPort"), 10);
 
 // Get other configurations
 const vpcCidrBlock = config.require("vpcCidrBlock");
+const domainName = config.require("domainName"); 
+const hostedZoneId = config.require("hostedZoneId");
 const subnetMask = config.require("subnetMask");
 const amiId = config.require("amiId");
 const keyPair = config.require("keyPair");
