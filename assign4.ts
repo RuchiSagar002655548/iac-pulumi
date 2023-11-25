@@ -306,7 +306,22 @@ export const privateSubnetIds = subnets.apply(subnets =>
     subnets.filter((_, index) => index % 2 !== 0).map(subnet => subnet.id)
 );
 
-const dbParameterGroup = new aws.rds.ParameterGroup(parameterGroupName, {
+// Create an SNS topic 
+const snsTopic = new aws.sns.Topic("myTopic", {
+    name: snsTopicName
+});
+
+// Construct the SNS Topic ARN
+const snsTopicArn = pulumi.interpolate`arn:aws:sns:${region}:${accountId}:${snsTopicName}`;
+
+// Create an SNS topic subscription for the Lambda function
+const lambdaSubscription = new aws.sns.TopicSubscription("myLambdaSubscription", {
+    topic: snsTopic.arn,
+    protocol: "lambda",
+    endpoint: lambdaFunc.arn,  // The ARN of the Lambda function
+});
+
+const dbParameterGroup = new aws.rds.ParameterGroup(myParameterGroupName, {
     family: "mariadb10.5",
     description: "Custom parameter group for mariadb10.5",
     parameters: [{
