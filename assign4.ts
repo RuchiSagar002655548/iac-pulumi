@@ -22,14 +22,18 @@ function calculateSubnetCidrBlock(vpcCidrBlock: string, subnetIndex: number,  to
 // Load configurations
 const config = new pulumi.Config("myfirstpulumi");
 const awsConfig = new pulumi.Config("aws");
-const domainName = config.require("domainName"); 
-const hostedZoneId = config.require("hostedZoneId");
+const gcpConfig = new pulumi.Config("gcp");
+
+//const domainName = config.require("domainName"); 
+//const hostedZoneId = config.require("hostedZoneId");
 
 // Get the AWS profile from the config
 const awsProfile = awsConfig.require("profile");
 
 // Get AWS region from configuration
 const region =  awsConfig.require("region") as aws.Region
+const gcpRegion =  gcpConfig.require("region") 
+const gcpProjectId =  gcpConfig.require("project") 
 const vpcName = config.require("vpcName");
 const rdsName = config.require("identifier");
 const intClass = config.require("instanceClass");
