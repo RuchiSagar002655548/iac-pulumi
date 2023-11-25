@@ -56,7 +56,13 @@ const amiId = config.require("amiId");
 const keyPair = config.require("keyPair");
 const dbUsername = config.requireSecret("dbUsername");
 const dbPassword = config.requireSecret("dbPassword");
-
+const accountId = config.require("accountId");
+const applicationPort = parseInt(config.require("applicationPort"), 10);
+const snsTopicName = config.require("snsTopicName"); 
+const bucketAccountId = config.require("bucketAccountId");
+const bucketDisplayName = config.require("bucketDisplayName");
+const gcpBucketName = config.require("gcpBucketName");
+const location = config.require("location");
 
 // Declare separate arrays for public and private subnets
 const publicSubnets: aws.ec2.Subnet[] = [];
