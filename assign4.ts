@@ -688,25 +688,26 @@ const aRecord = new aws.route53.Record("aRecord", {
     }],
 }, { provider });
 
-
 // Export the security group ID
 export const securityGroupId = appSecurityGroup.id;
-
 export const internetGatewayId = internetGateway.id;
 export const publicRouteTableId = publicRouteTable.id;
 export const privateRouteTableId = privateRouteTable.id;
-// Export the public IP of the instance
-//export const publicIp = ec2Instance.publicIp;
+
 // Export the rds security group ID
 export const rdsSecurityGroupId = rdsSecurityGroup.id;
 export const recordName = aRecord.name;
 export const recordType = aRecord.type;
+
 // Export the load balancer security group ID
 export const lbSecurityGroupId = lbSecurityGroup.id;
+
 // Export the ARN of the topic
 exports.topicArn = snsTopic.arn;
+
 // Export the bucket name and service account email
 exports.bucketName = bucket.name;
 exports.serviceAccountEmail = bucketServiceAccount.email;
+
 // Export the key names
 exports.bucketServiceAccountKeyName = bucketAccountId;
