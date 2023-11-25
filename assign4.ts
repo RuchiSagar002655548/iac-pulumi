@@ -314,12 +314,52 @@ const snsTopic = new aws.sns.Topic("myTopic", {
 // Construct the SNS Topic ARN
 const snsTopicArn = pulumi.interpolate`arn:aws:sns:${region}:${accountId}:${snsTopicName}`;
 
+const lambdaRole = new aws.iam.Role("lambdaRole", {
+    assumeRolePolicy: JSON.stringify({
+        Version: "2012-10-17",
+        Statement: [{
+            Action: "sts:AssumeRole",
+            Effect: "Allow",
+            Principal: {
+                Service: "lambda.amazonaws.com",
+            },
+        }],
+    }),
+});
+
+new aws.iam.RolePolicyAttachment("lambdaBasicExecutionRoleAttachment", {
+    role: lambdaRole,
+    policyArn: "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+});
+
+new aws.iam.RolePolicyAttachment("lambdaSnsFullAccessPolicyAttachment", {
+    role: lambdaRole,
+    policyArn: "arn:aws:iam::aws:policy/AmazonSNSFullAccess",
+});
+
 // Create an SNS topic subscription for the Lambda function
 const lambdaSubscription = new aws.sns.TopicSubscription("myLambdaSubscription", {
     topic: snsTopic.arn,
     protocol: "lambda",
     endpoint: lambdaFunc.arn,  // The ARN of the Lambda function
 });
+
+
+const lambdaPermission = new aws.lambda.Permission("myLambdaPermission", {
+    action: "lambda:InvokeFunction",
+    function: lambdaFunc.name, // The name of the Lambda function
+    principal: "sns.amazonaws.com",
+    sourceArn: snsTopic.arn,  // The ARN of the SNS topic
+});
+
+
+// Attach the roles/storage.objectCreator role to the service account for the bucket
+const bucketIamBinding = new gcp.storage.BucketIAMBinding("myBucketIamBinding", {
+    bucket: gcpBucketName,
+    role: "roles/storage.objectCreator",
+    members: [bucketServiceAccount.email.apply(email => `serviceAccount:${email}`)],
+},{ dependsOn: [bucket] });
+
 
 const dbParameterGroup = new aws.rds.ParameterGroup(myParameterGroupName, {
     family: "mariadb10.5",
@@ -373,8 +413,10 @@ echo "DBPORT=${dbPort}" >> $ENV_FILE
 echo "DBUSER=${username}" >> $ENV_FILE
 echo "DBPASS=${password}" >> $ENV_FILE
 echo "DATABASE=${databaseName}" >> $ENV_FILE
+echo "PORT=${applicationPort}" >> $ENV_FILE
 echo "CSV_PATH=/home/ec2-user/webapp/users.csv" >> $ENV_FILE
-echo "PORT=3000" >> $ENV_FILE
+echo "SNS_TOPIC_ARN=arn:aws:sns:${region}:${accountId}:${snsTopicName}" >>$ENV_FILE
+echo "AWS_REGION= ${region}" >> $ENV_FILE
 
 # Optionally, you can change the owner and group of the file if needed
 sudo chown ec2-user:ec2-group $ENV_FILE
