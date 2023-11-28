@@ -1,37 +1,37 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 import * as gcp from "@pulumi/gcp";
-
+ 
 function calculateSubnetCidrBlock(vpcCidrBlock: string, subnetIndex: number,  totalSubnets: number): string {
     const cidrParts = vpcCidrBlock.split('/');
     const ipParts = cidrParts[0].split('.').map(part => parseInt(part, 10));
-    
+   
     // Increment the third octet based on the subnet index
     ipParts[2] += subnetIndex;
-
+ 
     if (ipParts[2] > 255) {
         // Handle this case accordingly; in this example, we're throwing an error
         throw new Error('Exceeded the maximum number of subnets for the given VPC CIDR block');
     }
-
+ 
     const subnetIp = ipParts.join('.');
     return `${subnetIp}/${subnetMask}`;  // Use /24 subnet mask for each subnet
 }
 const fs = require('fs');
-
+ 
 // Load configurations
 const config = new pulumi.Config("myfirstpulumi");
 const awsConfig = new pulumi.Config("aws");
 const gcpConfig = new pulumi.Config("gcp");
-
+ 
 // Get the AWS profile from the config
 const awsProfile = awsConfig.require("profile");
-
+ 
 // Get AWS region from configuration
 const region =  awsConfig.require("region") as aws.Region
-const gcpRegion =  gcpConfig.require("region") 
-const gcpProjectId =  gcpConfig.require("project") 
-
+const gcpRegion =  gcpConfig.require("region")
+const gcpProjectId =  gcpConfig.require("project")
+ 
 const vpcName = config.require("vpcName");
 const rdsName = config.require("identifier");
 const intClass = config.require("instanceClass");
@@ -46,7 +46,7 @@ const publicRouteTableName = config.require("publicRouteTableName");
 const privateRouteTableName = config.require("privateRouteTableName");
 // Get other configurations
 const vpcCidrBlock = config.require("vpcCidrBlock");
-const domainName = config.require("domainName"); 
+const domainName = config.require("domainName");
 const hostedZoneId = config.require("hostedZoneId");
 const subnetMask = config.require("subnetMask");
 const amiId = config.require("amiId");
@@ -55,7 +55,7 @@ const dbUsername = config.requireSecret("dbUsername");
 const dbPassword = config.requireSecret("dbPassword");
 const accountId = config.require("accountId");
 const applicationPort = parseInt(config.require("applicationPort"), 10);
-const snsTopicName = config.require("snsTopicName"); 
+const snsTopicName = config.require("snsTopicName");
 const bucketAccountId = config.require("bucketAccountId");
 const bucketDisplayName = config.require("bucketDisplayName");
 const gcpBucketName = config.require("gcpBucketName");
@@ -71,17 +71,18 @@ const listenerPort = parseInt(config.require("listenerPort"), 10);
 const mailgunApiKey = config.requireSecret("mailgunApiKey");
 const mailgunDomain = config.require("mailgunDomain");
 const DynamoDbTableName = config.require("DynamoDbTableName");
-
+const lambdaFilePath =  config.require("lambdaFilePath");
+ 
 // Declare separate arrays for public and private subnets
 const publicSubnets: aws.ec2.Subnet[] = [];
 const privateSubnets: aws.ec2.Subnet[] = [];
-
+ 
 // Configure AWS provider with the specified region
 const provider = new aws.Provider("provider", {
     region: region,
     profile: awsProfile,
 });
-
+ 
 // Create a VPC
 const vpc = new aws.ec2.Vpc(vpcName, {
     cidrBlock: vpcCidrBlock,
@@ -89,35 +90,35 @@ const vpc = new aws.ec2.Vpc(vpcName, {
         Name: vpcName,
     },
 }, { provider });
-
+ 
 // Create a Google Service Account
 const bucketServiceAccount = new gcp.serviceaccount.Account("myBucketAccount", {
     accountId: bucketAccountId,
     displayName: bucketDisplayName,
 });
-
+ 
 // Assign the Service Account Admin role to the newly created service account
 const serviceAccountAdminBinding = new gcp.projects.IAMMember("serviceAccountAdminBinding", {
     member: pulumi.interpolate`serviceAccount:${bucketServiceAccount.email}`,
     role: "roles/iam.serviceAccountAdmin",
-    project: gcpProjectId, 
+    project: gcpProjectId,
 });
-
+ 
 const bucket = new gcp.storage.Bucket("myBucket", {
     name: gcpBucketName,
     location: location,
     forceDestroy: true,
 });
-
+ 
 // Create access key for the bucket service account
 const bucketServiceAccountKey = new gcp.serviceaccount.Key("bucketAccessKey", {
     serviceAccountId: bucketServiceAccount.name,
     keyAlgorithm: "KEY_ALG_RSA_2048"
 });
-
+ 
 // Query the number of availability zones in the specified region
 const azs = pulumi.output(aws.getAvailabilityZones());
-
+ 
 // Create subnets dynamically based on the number of availability zones (up to 3)
 const subnets = azs.apply((azs) =>
   azs.names.slice(0, 3).flatMap((az, index) => {
@@ -131,7 +132,7 @@ const subnets = azs.apply((azs) =>
       index + 3,
       3
     );
-
+ 
 // Create subnets dynamically based on the number of availability zones (up to 3)
     const publicSubnet = new aws.ec2.Subnet(`publicSubnet-${index}`, {
         vpcId: vpc.id,
@@ -139,28 +140,28 @@ const subnets = azs.apply((azs) =>
         availabilityZone: az,
         mapPublicIpOnLaunch: true,
         tags: {
-            Name: `PublicSubnet-${index}`, 
+            Name: `PublicSubnet-${index}`,
         },
     }, { provider });
-
+ 
     const privateSubnet = new aws.ec2.Subnet(`privateSubnet-${index}`, {
         vpcId: vpc.id,
         cidrBlock: privateSubnetCidrBlock,
         availabilityZone: az,
         mapPublicIpOnLaunch: false,
         tags: {
-            Name: `PrivateSubnet-${index}`, 
+            Name: `PrivateSubnet-${index}`,
         },
     }, { provider });
-
-
+ 
+ 
     // Pushing the subnets to their respective arrays
     publicSubnets.push(publicSubnet);
     privateSubnets.push(privateSubnet);
-
+ 
     return [publicSubnet, privateSubnet];
 }));
-
+ 
 // Create an Internet Gateway and attach it to the VPC
 const internetGateway = new aws.ec2.InternetGateway(internetGatewayName, {
     vpcId: vpc.id,
@@ -168,7 +169,7 @@ const internetGateway = new aws.ec2.InternetGateway(internetGatewayName, {
         Name: internetGatewayName,  
     },
 }, { provider });
-
+ 
 // Create a Public Route Table with a route to the Internet Gateway
 const publicRouteTable = new aws.ec2.RouteTable( publicRouteTableName, {
     vpcId: vpc.id,
@@ -180,12 +181,12 @@ const publicRouteTable = new aws.ec2.RouteTable( publicRouteTableName, {
         gatewayId: internetGateway.id,
     }],
 }, { provider });
-
+ 
 // Associate each public subnet with the Public Route Table
-subnets.apply(subnetArray => 
+subnets.apply(subnetArray =>
     subnetArray.filter((_, index) => index % 2 === 0)
-    .forEach(subnet => 
-        subnet.id.apply(id => 
+    .forEach(subnet =>
+        subnet.id.apply(id =>
             new aws.ec2.RouteTableAssociation(`publicRtAssoc-${id}`, {
                 subnetId: id,
                 routeTableId: publicRouteTable.id,
@@ -193,20 +194,20 @@ subnets.apply(subnetArray =>
         )
     )
 );
-
-// Create a Private Route Table 
+ 
+// Create a Private Route Table
 const privateRouteTable = new aws.ec2.RouteTable( privateRouteTableName, {
     vpcId: vpc.id,
     tags: {
         Name:  privateRouteTableName,  
     },
 }, { provider });
-
+ 
 // Associate each private subnet with the Private Route Table
-subnets.apply(subnetArray => 
+subnets.apply(subnetArray =>
     subnetArray.filter((_, index) => index % 2 !== 0)
-    .forEach(subnet => 
-        subnet.id.apply(id => 
+    .forEach(subnet =>
+        subnet.id.apply(id =>
             new aws.ec2.RouteTableAssociation(`privateRtAssoc-${id}`, {
                 subnetId: id,
                 routeTableId: privateRouteTable.id,
@@ -215,7 +216,7 @@ subnets.apply(subnetArray =>
         )
     )
 );
-
+ 
 const lbSecurityGroup = new aws.ec2.SecurityGroup("lb-sg", {
     vpcId: vpc.id,
     description: "Load Balancer Security Group",
@@ -246,9 +247,9 @@ const lbSecurityGroup = new aws.ec2.SecurityGroup("lb-sg", {
         Name: "LoadBalancerSecurityGroup",
     },
 }, { provider });
-
-
-
+ 
+ 
+ 
 // Create an EC2 security group for web applications
 const appSecurityGroup = new aws.ec2.SecurityGroup("app-sg", {
     vpcId: vpc.id,
@@ -279,9 +280,9 @@ const appSecurityGroup = new aws.ec2.SecurityGroup("app-sg", {
         }
     ],
 });
-
-
-
+ 
+ 
+ 
 // Create an EC2 security group for RDS instances
 const rdsSecurityGroup = new aws.ec2.SecurityGroup("rds-sg", {
     vpcId: vpc.id,
@@ -302,29 +303,29 @@ const rdsSecurityGroup = new aws.ec2.SecurityGroup("rds-sg", {
             fromPort: 0,
             toPort: 0,
             cidrBlocks: [publicCidrBlockName]
-            
+           
         }
     ],
 }, { provider });
-
-
+ 
+ 
 // Export the IDs of resources created
 export const vpcId = vpc.id;
-export const publicSubnetIds = subnets.apply(subnets => 
+export const publicSubnetIds = subnets.apply(subnets =>
     subnets.filter((_, index) => index % 2 === 0).map(subnet => subnet.id)
 );
-export const privateSubnetIds = subnets.apply(subnets => 
+export const privateSubnetIds = subnets.apply(subnets =>
     subnets.filter((_, index) => index % 2 !== 0).map(subnet => subnet.id)
 );
-
-// Create an SNS topic 
+ 
+// Create an SNS topic
 const snsTopic = new aws.sns.Topic("myTopic", {
     name: snsTopicName
 });
-
+ 
 // Construct the SNS Topic ARN
 const snsTopicArn = pulumi.interpolate`arn:aws:sns:${region}:${accountId}:${snsTopicName}`;
-
+ 
 const lambdaRole = new aws.iam.Role("lambdaRole", {
     assumeRolePolicy: JSON.stringify({
         Version: "2012-10-17",
@@ -337,18 +338,18 @@ const lambdaRole = new aws.iam.Role("lambdaRole", {
         }],
     }),
 });
-
+ 
 new aws.iam.RolePolicyAttachment("lambdaBasicExecutionRoleAttachment", {
     role: lambdaRole,
     policyArn: "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
 });
-
+ 
 new aws.iam.RolePolicyAttachment("lambdaSnsFullAccessPolicyAttachment", {
     role: lambdaRole,
     policyArn: "arn:aws:iam::aws:policy/AmazonSNSFullAccess",
 });
-
-
+ 
+ 
 // Define a DynamoDB table
 const dynamoDbTable = new aws.dynamodb.Table("myDynamoDbTable", {
     name: DynamoDbTableName,
@@ -361,7 +362,7 @@ const dynamoDbTable = new aws.dynamodb.Table("myDynamoDbTable", {
     hashKey: "id",
     billingMode: "PAY_PER_REQUEST",
 });
-
+ 
 const dynamoDbPolicy = new aws.iam.Policy("dynamoDbPolicy", {
     description: "A policy for DynamoDB operations",
     policy: pulumi.all([dynamoDbTable.arn]).apply(([tableArn]) => JSON.stringify({
@@ -379,17 +380,17 @@ const dynamoDbPolicy = new aws.iam.Policy("dynamoDbPolicy", {
         }],
     })),
 });
-
+ 
 new aws.iam.RolePolicyAttachment("lambdaDynamoDbPolicyAttachment", {
     role: lambdaRole,
     policyArn: dynamoDbPolicy.arn,
 });
-
-
+ 
+ 
 const lambdaFunc = new aws.lambda.Function("myLambdaFunction", {
     runtime: aws.lambda.Runtime.NodeJS18dX,  
     code: new pulumi.asset.AssetArchive({
-    ".": new pulumi.asset.FileArchive("../serverless")
+    ".": new pulumi.asset.FileArchive(lambdaFilePath)
 }),
     handler: "handler.handler",
     role: lambdaRole.arn,  // ARN of an IAM role with necessary permissions  
@@ -401,35 +402,35 @@ const lambdaFunc = new aws.lambda.Function("myLambdaFunction", {
             MAILGUN_DOMAIN: mailgunDomain,
             DYNAMODB_TABLE: DynamoDbTableName,
             REGION: gcpRegion
-
+ 
         },
     },
 });
-
+ 
 // Create an SNS topic subscription for the Lambda function
 const lambdaSubscription = new aws.sns.TopicSubscription("myLambdaSubscription", {
     topic: snsTopic.arn,
     protocol: "lambda",
     endpoint: lambdaFunc.arn,  // The ARN of the Lambda function
 });
-
+ 
 const lambdaPermission = new aws.lambda.Permission("myLambdaPermission", {
     action: "lambda:InvokeFunction",
     function: lambdaFunc.name, // The name of the Lambda function
     principal: "sns.amazonaws.com",
     sourceArn: snsTopic.arn,  // The ARN of the SNS topic
 });
-
-
+ 
+ 
 // Attach the roles/storage.objectCreator role to the service account for the bucket
 const bucketIamBinding = new gcp.storage.BucketIAMBinding("myBucketIamBinding", {
     bucket: gcpBucketName,
     role: "roles/storage.objectCreator",
     members: [bucketServiceAccount.email.apply(email => `serviceAccount:${email}`)],
 },{ dependsOn: [bucket] });
-
-
-
+ 
+ 
+ 
 const dbParameterGroup = new aws.rds.ParameterGroup(myParameterGroupName, {
     family: "mariadb10.5",
     description: "Custom parameter group for mariadb10.5",
@@ -438,8 +439,8 @@ const dbParameterGroup = new aws.rds.ParameterGroup(myParameterGroupName, {
         value: "100"
     }]
 }, { provider });
-
-
+ 
+ 
 // Creating a DB subnet group
 const dbSubnetGroup = new aws.rds.SubnetGroup("dbsubnetgrp", {
     subnetIds: privateSubnetIds,
@@ -447,14 +448,14 @@ const dbSubnetGroup = new aws.rds.SubnetGroup("dbsubnetgrp", {
         Name: "dbsubnetgrp",
     },
 }, { provider });
-
+ 
 // Create an RDS instance with MariaDB
 const dbInstance = new aws.rds.Instance("mydbinstance", {
     instanceClass: intClass,
-    dbSubnetGroupName: dbSubnetGroup.name, 
-    parameterGroupName: dbParameterGroup.name, 
+    dbSubnetGroupName: dbSubnetGroup.name,
+    parameterGroupName: dbParameterGroup.name,
     engine: eng,
-    engineVersion: engVersion, 
+    engineVersion: engVersion,
     allocatedStorage: 20,
     storageType: storageType,
     username: dbUsername,
@@ -464,18 +465,18 @@ const dbInstance = new aws.rds.Instance("mydbinstance", {
     publiclyAccessible: false,
     identifier: rdsName,
     dbName: databaseName
-
+ 
 }, { provider });
-
+ 
 const userData = pulumi.all([dbInstance.endpoint, dbUsername, dbPassword,databaseName]).apply(([endpoint, username, password,databaseName]) => {
     const parts = endpoint.split(':');
     const endpoint_host = parts[0];
     const dbPort = parts[1];
-    
+   
     // Create the bash script string
     return `#!/bin/bash
 ENV_FILE="/home/ec2-user/webapp/.env"
-
+ 
 # Create or overwrite the environment file with the environment variables
 echo "DBHOST=${endpoint_host}" > $ENV_FILE
 echo "DBPORT=${dbPort}" >> $ENV_FILE
@@ -486,19 +487,19 @@ echo "PORT=${applicationPort}" >> $ENV_FILE
 echo "CSV_PATH=/home/ec2-user/webapp/users.csv" >> $ENV_FILE
 echo "SNS_TOPIC_ARN=arn:aws:sns:${region}:${accountId}:${snsTopicName}" >>$ENV_FILE
 echo "AWS_REGION= ${region}" >> $ENV_FILE
-
+ 
 # Optionally, you can change the owner and group of the file if needed
 sudo chown ec2-user:ec2-group $ENV_FILE
-
+ 
 # Adjust the permissions of the environment file
 sudo chmod 600 $ENV_FILE
-
+ 
 # Configure and restart the CloudWatch Agent
 sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json -s
 sudo systemctl restart amazon-cloudwatch-agent
 `;
 });
-
+ 
 const cloudWatchAgentServerPolicy = new aws.iam.Policy("cloudWatchAgentServerPolicy", {
     description: "A policy that allows sending logs to CloudWatch and publishing to SNS topics",
     policy: pulumi.all([region, accountId, snsTopicName]).apply(([region, accountId, snsTopicName]) => JSON.stringify({
@@ -521,7 +522,7 @@ const cloudWatchAgentServerPolicy = new aws.iam.Policy("cloudWatchAgentServerPol
                     "autoscaling:DescribeLaunchConfigurations",
                     "autoscaling:DescribePolicies",
                     "sns:Publish",
-                    
+                   
                 ],
                 "Resource": "*"
             },
@@ -540,7 +541,7 @@ const cloudWatchAgentServerPolicy = new aws.iam.Policy("cloudWatchAgentServerPol
         ]
     })),
 });
-
+ 
 const role = new aws.iam.Role("cloudWatchAgentRole", {
     assumeRolePolicy: JSON.stringify({
         Version: "2012-10-17",
@@ -553,24 +554,24 @@ const role = new aws.iam.Role("cloudWatchAgentRole", {
         }],
     }),
 });
-
+ 
 new aws.iam.RolePolicyAttachment("cloudWatchAgentRoleAttachment", {
     role: role.name,
     policyArn: cloudWatchAgentServerPolicy.arn,
 });
-
+ 
 // Create an IAM instance profile that references the IAM role
 const instanceProfile = new aws.iam.InstanceProfile("cloudWatchAgentInstanceProfile", {
     role: role.name,
 });
-
+ 
 const appLoadBalancer = new aws.lb.LoadBalancer("appLoadBalancer", {
     internal: false,
     securityGroups: [lbSecurityGroup.id],
-    subnets: publicSubnetIds, 
+    subnets: publicSubnetIds,
     enableDeletionProtection: false,
 });
-
+ 
 const targetGroup = new aws.lb.TargetGroup("targetGroup", {
     port: applicationPort, // Assuming your app listens on port 3000
     protocol: "HTTP",
@@ -581,7 +582,7 @@ const targetGroup = new aws.lb.TargetGroup("targetGroup", {
         path: "/healthz"
     },
 });
-
+ 
 const listener = new aws.lb.Listener("listener", {
     loadBalancerArn: appLoadBalancer.arn,
     port: listenerPort,
@@ -590,7 +591,7 @@ const listener = new aws.lb.Listener("listener", {
         targetGroupArn: targetGroup.arn,
     }],
 });
-
+ 
 const launchTemplate = new aws.ec2.LaunchTemplate("launch_template", {
     imageId: amiId,
     instanceType: "t2.micro",
@@ -605,7 +606,7 @@ const launchTemplate = new aws.ec2.LaunchTemplate("launch_template", {
     },
 });
    
-
+ 
 const autoScalingGroup = new aws.autoscaling.Group("webAppAutoScalingGroup", {
     maxSize: maxSize,
     minSize: minSize,
@@ -627,8 +628,8 @@ const autoScalingGroup = new aws.autoscaling.Group("webAppAutoScalingGroup", {
     defaultCooldown: 60,
     targetGroupArns: [targetGroup.arn],
 }, { dependsOn: publicSubnets});
-
-
+ 
+ 
 const scaleUpPolicy = new aws.autoscaling.Policy("scaleUp", {
     autoscalingGroupName: autoScalingGroup.name,
     cooldown: coolDown,
@@ -638,7 +639,7 @@ const scaleUpPolicy = new aws.autoscaling.Policy("scaleUp", {
     policyType: "SimpleScaling",
     // You would typically use CloudWatch Alarms to trigger this policy
 });
-
+ 
 const scaleDownPolicy = new aws.autoscaling.Policy("scaleDown", {
     autoscalingGroupName: autoScalingGroup.name,
     cooldown: coolDown,
@@ -648,7 +649,7 @@ const scaleDownPolicy = new aws.autoscaling.Policy("scaleDown", {
     policyType: "SimpleScaling",
     // You would typically use CloudWatch Alarms to trigger this policy
 });
-
+ 
 const cpuHighAlarm = new aws.cloudwatch.MetricAlarm("cpuHighAlarm", {
     metricName: "CPUUtilization",
     namespace: "AWS/EC2",
@@ -662,7 +663,7 @@ const cpuHighAlarm = new aws.cloudwatch.MetricAlarm("cpuHighAlarm", {
         AutoScalingGroupName: autoScalingGroup.name,
     },
 });
-
+ 
 const cpuLowAlarm = new aws.cloudwatch.MetricAlarm("cpuLowAlarm", {
     metricName: "CPUUtilization",
     namespace: "AWS/EC2",
@@ -676,7 +677,38 @@ const cpuLowAlarm = new aws.cloudwatch.MetricAlarm("cpuLowAlarm", {
         AutoScalingGroupName: autoScalingGroup.name,
     },
 });
-
+ 
+ 
+/*
+// Create an EC2 instance
+const ec2Instance = new aws.ec2.Instance("web-app", {
+    ami: amiId,
+    instanceType: "t2.micro",
+    vpcSecurityGroupIds: [appSecurityGroup.id],  // attach application security group
+    subnetId: pulumi.output(publicSubnetIds[0]),  
+    associatePublicIpAddress: true,
+    keyName: keyPair,
+    disableApiTermination: false,  // allows the instance to be terminated
+    rootBlockDevice: {
+        deleteOnTermination: true,  // ensure the EBS volume is deleted upon termination
+        volumeSize: 25, // set the root volume size to 25 GB
+        volumeType: "gp2", // set the root volume type to General Purpose SSD (GP2)
+    },
+    tags: {
+        Name: "web-app",
+    },
+    userData: userData,
+    iamInstanceProfile: instanceProfile.name,
+}, { dependsOn: publicSubnets });
+ 
+const aRecord = new aws.route53.Record("aRecord", {
+    zoneId: hostedZoneId,
+    name: domainName,
+    type: "A",
+    ttl: 60,
+    records: [pulumi.output(ec2Instance.publicIp)],
+}, { provider});*/
+ 
 const aRecord = new aws.route53.Record("aRecord", {
     zoneId: hostedZoneId,
     name: domainName,
@@ -687,27 +719,26 @@ const aRecord = new aws.route53.Record("aRecord", {
         evaluateTargetHealth: true,
     }],
 }, { provider });
-
+ 
+ 
 // Export the security group ID
 export const securityGroupId = appSecurityGroup.id;
+ 
 export const internetGatewayId = internetGateway.id;
 export const publicRouteTableId = publicRouteTable.id;
 export const privateRouteTableId = privateRouteTable.id;
-
+// Export the public IP of the instance
+//export const publicIp = ec2Instance.publicIp;
 // Export the rds security group ID
 export const rdsSecurityGroupId = rdsSecurityGroup.id;
 export const recordName = aRecord.name;
 export const recordType = aRecord.type;
-
 // Export the load balancer security group ID
 export const lbSecurityGroupId = lbSecurityGroup.id;
-
 // Export the ARN of the topic
 exports.topicArn = snsTopic.arn;
-
 // Export the bucket name and service account email
 exports.bucketName = bucket.name;
 exports.serviceAccountEmail = bucketServiceAccount.email;
-
 // Export the key names
 exports.bucketServiceAccountKeyName = bucketAccountId;
