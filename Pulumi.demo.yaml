@@ -1,26 +1,47 @@
 config:
   aws:profile: demo
   aws:region: us-east-1
+  gcp:project: myapp-demo-405520
+  gcp:region: us-east4
+  myfirstpulumi:DynamoDbTableName: "csye6225DynamoDb"
+  myfirstpulumi:accountId: "677293713674"
   myfirstpulumi:amiId: "ami-031cd0aeb5357d38e"
+  myfirstpulumi:applicationPort: "3000"
+  myfirstpulumi:bucketAccountId: "bucketdevid21"
+  myfirstpulumi:bucketDisplayName: "bucketDevServiceAccount"
+  myfirstpulumi:cap: "1"
   myfirstpulumi:dbName: "csye6225"
   myfirstpulumi:dbPassword:
     secure: AAABAFVbRTiaFPuMpkxfcaAQhD9znoOcklFm8nkQEdM0I/yHShbYFw==
   myfirstpulumi:dbUsername:
     secure: AAABANCMGTNvyKe/W/7q8rCX4y8+PWo1QjclhrRoxlxJ+lzGnQ==
   myfirstpulumi:domainName: "demo.fallcsye6225.me"
+  myfirstpulumi:downThreshold: "1"
   myfirstpulumi:engine: "mariadb"
   myfirstpulumi:engineVersion: "10.5"
+  myfirstpulumi:gcpBucketName: "ruchi-dev-bucket"
   myfirstpulumi:hostedZoneId: "Z07738473RMKFGHJTUR6X"
   myfirstpulumi:identifier: "csye6225"
   myfirstpulumi:instanceClass: "db.t2.micro"
   myfirstpulumi:internetGatewayName: "InternetGateway"
   myfirstpulumi:keyPair: "demo-user-keypair"
-  myfirstpulumi:parameterGroupName: "csye6225pg"
+  myfirstpulumi:lambdaFilePath: "../serverless"
+  myfirstpulumi:listenerPort: "80"
+  myfirstpulumi:mailgunApiKey:
+    secure: AAABABtyoFxn+rATeEW1ESO3ZSwPyfHaHJnluUffD7ZE5c4nmSj9NQ1f2j5ckph0jXgUHyrRwer0seHtQ3YH7ZycAjv0+L9/RVV0JdhhhHP11A==
+  myfirstpulumi:mailgunDomain: "fallcsye6225.me"
+  myfirstpulumi:maxSize: "3"
+  myfirstpulumi:minSize: "1"
+  myfirstpulumi:myParameterGroupName: "csye6225pg"
+  myfirstpulumi:period: "60"
   myfirstpulumi:privateRouteTableName: "PrivateRouteTable"
   myfirstpulumi:publicCidrBlockName: "0.0.0.0/0"
   myfirstpulumi:publicRouteTableName: "PublicRouteTable"
+  myfirstpulumi:snsTopicName: "mycsye6225sns"
   myfirstpulumi:storageType: "gp2"
   myfirstpulumi:subnetMask: "24"
+  myfirstpulumi:upThreshold: "3"
   myfirstpulumi:vpcCidrBlock: "10.0.0.0/16"
   myfirstpulumi:vpcName: "MyVPC"
-  myfirstpulumi:applicationPort: "3000"
+  myfirstpulumi:location: "US"
+  myfirstpulumi:coolDown: "60"

@@ -678,37 +678,6 @@ const cpuLowAlarm = new aws.cloudwatch.MetricAlarm("cpuLowAlarm", {
     },
 });
  
- 
-/*
-// Create an EC2 instance
-const ec2Instance = new aws.ec2.Instance("web-app", {
-    ami: amiId,
-    instanceType: "t2.micro",
-    vpcSecurityGroupIds: [appSecurityGroup.id],  // attach application security group
-    subnetId: pulumi.output(publicSubnetIds[0]),  
-    associatePublicIpAddress: true,
-    keyName: keyPair,
-    disableApiTermination: false,  // allows the instance to be terminated
-    rootBlockDevice: {
-        deleteOnTermination: true,  // ensure the EBS volume is deleted upon termination
-        volumeSize: 25, // set the root volume size to 25 GB
-        volumeType: "gp2", // set the root volume type to General Purpose SSD (GP2)
-    },
-    tags: {
-        Name: "web-app",
-    },
-    userData: userData,
-    iamInstanceProfile: instanceProfile.name,
-}, { dependsOn: publicSubnets });
- 
-const aRecord = new aws.route53.Record("aRecord", {
-    zoneId: hostedZoneId,
-    name: domainName,
-    type: "A",
-    ttl: 60,
-    records: [pulumi.output(ec2Instance.publicIp)],
-}, { provider});*/
- 
 const aRecord = new aws.route53.Record("aRecord", {
     zoneId: hostedZoneId,
     name: domainName,
@@ -719,26 +688,27 @@ const aRecord = new aws.route53.Record("aRecord", {
         evaluateTargetHealth: true,
     }],
 }, { provider });
- 
- 
+  
 // Export the security group ID
-export const securityGroupId = appSecurityGroup.id;
- 
+export const securityGroupId = appSecurityGroup.id; 
 export const internetGatewayId = internetGateway.id;
 export const publicRouteTableId = publicRouteTable.id;
 export const privateRouteTableId = privateRouteTable.id;
-// Export the public IP of the instance
-//export const publicIp = ec2Instance.publicIp;
+
 // Export the rds security group ID
 export const rdsSecurityGroupId = rdsSecurityGroup.id;
 export const recordName = aRecord.name;
 export const recordType = aRecord.type;
+
 // Export the load balancer security group ID
 export const lbSecurityGroupId = lbSecurityGroup.id;
+
 // Export the ARN of the topic
 exports.topicArn = snsTopic.arn;
+
 // Export the bucket name and service account email
 exports.bucketName = bucket.name;
 exports.serviceAccountEmail = bucketServiceAccount.email;
+
 // Export the key names
 exports.bucketServiceAccountKeyName = bucketAccountId;
