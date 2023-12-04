@@ -44,6 +44,8 @@ const myParameterGroupName = config.require("myParameterGroupName");
 const internetGatewayName = config.require("internetGatewayName");
 const publicRouteTableName = config.require("publicRouteTableName");
 const privateRouteTableName = config.require("privateRouteTableName");
+const autoScalingGroupName = config.require("autoScalingGroupName");
+
 // Get other configurations
 const vpcCidrBlock = config.require("vpcCidrBlock");
 const domainName = config.require("domainName");
@@ -74,6 +76,7 @@ const DynamoDbTableName = config.require("DynamoDbTableName");
 const lambdaFilePath =  config.require("lambdaFilePath");
 const certificateArn =  config.require("certificateArn");
 const launchTemplateName =  config.require("launchTemplateName");
+const sslPolicy =  config.require("sslPolicy");
  
 // Declare separate arrays for public and private subnets
 const publicSubnets: aws.ec2.Subnet[] = [];
@@ -258,12 +261,12 @@ const appSecurityGroup = new aws.ec2.SecurityGroup("app-sg", {
     description: "Application Security Group",
     ingress: [
         // Allow SSH (22) and application Port traffic from the load balancer security group
-        /*{
+        {
             protocol: "tcp",
             fromPort: 22,
             toPort: 22,
             securityGroups: [lbSecurityGroup.id]
-        },*/
+        },
         // Allow Application traffic from the load balancer security group
         {
             protocol: "tcp",
@@ -589,7 +592,7 @@ const listener = new aws.lb.Listener("listener", {
     loadBalancerArn: appLoadBalancer.arn,
     port: listenerPort,
     protocol: "HTTPS",
-    sslPolicy: "ELBSecurityPolicy-TLS13-1-2-2021-06",
+    sslPolicy: sslPolicy,
     certificateArn: certificateArn,
     defaultActions: [{
         type: "forward",
@@ -603,7 +606,7 @@ const launchTemplate = new aws.ec2.LaunchTemplate("launch_template", {
     instanceType: "t2.micro",
     keyName: keyPair,
     networkInterfaces: [{
-        associatePublicIpAddress: "false",
+        associatePublicIpAddress: "true",
         securityGroups: [appSecurityGroup.id],
     }],
     userData: userData.apply(ud => Buffer.from(ud).toString('base64')),
@@ -614,6 +617,7 @@ const launchTemplate = new aws.ec2.LaunchTemplate("launch_template", {
    
  
 const autoScalingGroup = new aws.autoscaling.Group("webAppAutoScalingGroup", {
+    name: autoScalingGroupName,
     maxSize: maxSize,
     minSize: minSize,
     desiredCapacity: cap,
