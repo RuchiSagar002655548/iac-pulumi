@@ -5,7 +5,7 @@ config:
   gcp:region: us-east4
   myfirstpulumi:DynamoDbTableName: "csye6225DynamoDb"
   myfirstpulumi:accountId: "746597088931"
-  myfirstpulumi:amiId: "ami-06216e2a641541e3b"
+  myfirstpulumi:amiId: "ami-0b957bc79b7ce4956"
   myfirstpulumi:applicationPort: "3000"
   myfirstpulumi:bucketAccountId: "bucketdevid21"
   myfirstpulumi:bucketDisplayName: "bucketDevServiceAccount"
@@ -47,3 +47,5 @@ config:
   myfirstpulumi:coolDown: "60"
   myfirstpulumi:certificateArn: "arn:aws:acm:us-east-1:746597088931:certificate/5f646cda-318b-448a-814a-9e2ff27f25f6"
   myfirstpulumi:launchTemplateName: "my_launchTemplate"
+  myfirstpulumi:autoScalingGroupName: "webapp_asg"
+  myfirstpulumi:sslPolicy: "ELBSecurityPolicy-TLS13-1-2-2021-06"
