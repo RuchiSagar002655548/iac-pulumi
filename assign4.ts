@@ -221,12 +221,12 @@ const lbSecurityGroup = new aws.ec2.SecurityGroup("lb-sg", {
     vpcId: vpc.id,
     description: "Load Balancer Security Group",
     ingress: [
-        {
+        /*{
             protocol: "tcp",
             fromPort: 80,
             toPort: 80,
             cidrBlocks: [publicCidrBlockName]
-        },
+        },*/
         {
             protocol: "tcp",
             fromPort: 443,
@@ -256,12 +256,12 @@ const appSecurityGroup = new aws.ec2.SecurityGroup("app-sg", {
     description: "Application Security Group",
     ingress: [
         // Allow SSH (22) and application Port traffic from the load balancer security group
-        {
+        /*{
             protocol: "tcp",
             fromPort: 22,
             toPort: 22,
             securityGroups: [lbSecurityGroup.id]
-        },
+        },*/
         // Allow Application traffic from the load balancer security group
         {
             protocol: "tcp",
@@ -597,7 +597,7 @@ const launchTemplate = new aws.ec2.LaunchTemplate("launch_template", {
     instanceType: "t2.micro",
     keyName: keyPair,
     networkInterfaces: [{
-        associatePublicIpAddress: "true",
+        associatePublicIpAddress: "false",
         securityGroups: [appSecurityGroup.id],
     }],
     userData: userData.apply(ud => Buffer.from(ud).toString('base64')),
@@ -618,7 +618,7 @@ const autoScalingGroup = new aws.autoscaling.Group("webAppAutoScalingGroup", {
     },
     tags: [{
         key: "Name",
-        value: "web-app",
+        value: "web_app_asg",
         propagateAtLaunch: true,
     }, {
         key: "AutoScalingGroup",
