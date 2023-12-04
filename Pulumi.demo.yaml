@@ -26,7 +26,7 @@ config:
   myfirstpulumi:internetGatewayName: "InternetGateway"
   myfirstpulumi:keyPair: "demo-user-keypair"
   myfirstpulumi:lambdaFilePath: "../serverless"
-  myfirstpulumi:listenerPort: "80"
+  myfirstpulumi:listenerPort: "443"
   myfirstpulumi:mailgunApiKey:
     secure: AAABABtyoFxn+rATeEW1ESO3ZSwPyfHaHJnluUffD7ZE5c4nmSj9NQ1f2j5ckph0jXgUHyrRwer0seHtQ3YH7ZycAjv0+L9/RVV0JdhhhHP11A==
   myfirstpulumi:mailgunDomain: "fallcsye6225.me"
