@@ -72,6 +72,8 @@ const mailgunApiKey = config.requireSecret("mailgunApiKey");
 const mailgunDomain = config.require("mailgunDomain");
 const DynamoDbTableName = config.require("DynamoDbTableName");
 const lambdaFilePath =  config.require("lambdaFilePath");
+const certificateArn =  config.require("certificateArn");
+const launchTemplateName =  config.require("launchTemplateName");
  
 // Declare separate arrays for public and private subnets
 const publicSubnets: aws.ec2.Subnet[] = [];
@@ -573,7 +575,7 @@ const appLoadBalancer = new aws.lb.LoadBalancer("appLoadBalancer", {
 });
  
 const targetGroup = new aws.lb.TargetGroup("targetGroup", {
-    port: applicationPort, // Assuming your app listens on port 3000
+    port: applicationPort, 
     protocol: "HTTP",
     vpcId: vpcId,
     targetType: "instance",
@@ -586,6 +588,9 @@ const targetGroup = new aws.lb.TargetGroup("targetGroup", {
 const listener = new aws.lb.Listener("listener", {
     loadBalancerArn: appLoadBalancer.arn,
     port: listenerPort,
+    protocol: "HTTPS",
+    sslPolicy: "ELBSecurityPolicy-TLS13-1-2-2021-06",
+    certificateArn: certificateArn,
     defaultActions: [{
         type: "forward",
         targetGroupArn: targetGroup.arn,
@@ -593,6 +598,7 @@ const listener = new aws.lb.Listener("listener", {
 });
  
 const launchTemplate = new aws.ec2.LaunchTemplate("launch_template", {
+    name: launchTemplateName,
     imageId: amiId,
     instanceType: "t2.micro",
     keyName: keyPair,

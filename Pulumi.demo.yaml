@@ -45,3 +45,5 @@ config:
   myfirstpulumi:vpcName: "MyVPC"
   myfirstpulumi:location: "US"
   myfirstpulumi:coolDown: "60"
+  myfirstpulumi:certificateArn: "60"
+  myfirstpulumi:launchTemplateName: "my_launchTemplate"
